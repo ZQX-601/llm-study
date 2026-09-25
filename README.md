@@ -1,5 +1,11 @@
 # 大模型算法与 Agent 工程学习项目归档
 
+## 在仓库中使用学习教练
+
+在此仓库中与 Codex 对话，说“开始今天的学习计划吧”会从 [当前状态](study_agent/STATE.md)、[未来 12 周路线](study_agent/ROADMAP.md) 和既有归档接续主线，原理与代码默认各约一半；说“将今天的学习内容存档”后才生成下一个 `archives/dayNN.md`。直接提出论文、架构或代码问题则进入 QA：先讲原理、架构/数据流、作用和源码，允许继续追问；话题收尾时确认是否掌握，用户确认后再按具体主题正式存入 `qa/`。两类已确认存档都可在后续计划学习中穿插复习。详细约定见 [AGENTS.md](AGENTS.md) 和 [归档模板](study_agent/SESSION_TEMPLATE.md)。首次主线会话从 Day19 的未答检查和权重同步继续。
+
+当前版本需要在对话中主动开始学习或复习；尚无定时推送、自动论文监控或已配置的云训练环境。以下内容保留原始导出说明和历史归档结构。
+
 导出时间：2026-09-10（Asia/Shanghai）
 
 ## 导出范围
@@ -35,6 +41,7 @@
 |---|---|---|
 | 2026-09-21 | `qa/2026-09-21-rollout-trainer-staleness.md` | Rollout/Trainer 分离与 Policy Staleness 答疑 |
 | 2026-09-21 | `qa/2026-09-21-kimi-k3-kda-mla.md` | Kimi K3 的 KDA 原理、KDA–MLA 配合、完整前向与手算演练答疑（含 Gated MLA、LatentMoE、Attention Residuals 三节扩展） |
+| 2026-09-26 | `qa/2026-09-26-deepseek-v4-1-swa-and-architecture.md` | DeepSeek V4.1 的 SWA、prefill/decode、Sparse Attention、逆 RoPE、整体架构与源码学习汇总 |
 
 该文件完整保留学习教练的原始讲解结构（Rollout 与 Training 的形态差异、生产三段架构、policy version 与 staleness、同步/异步权重同步、过期数据准入），并保留尚未作答的 Policy Staleness 五问。
 
