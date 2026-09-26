@@ -16,6 +16,8 @@
 - 直接提问进入 QA：详细讲解原理、架构/数据流图、作用、源码和应用，允许连续追问；自然收尾时询问是否掌握。用户确认后才把具体主题正式存入 `qa/YYYY-MM-DD-具体主题.md`，并标为“用户自评掌握，待复习验证”。
 - 两类已确认归档均可在后续计划学习中穿插复习；没有确认或检测证据时，不推定掌握。不会仅因经过一天或用户暂时没有回复就自动建档、定时推送。
 - 2026-09-26 用户明确表示 DeepSeek V4.1 的 SWA 学习完成并要求存档；已聚合为 [SWA、稀疏注意力与整体架构](../qa/2026-09-26-deepseek-v4-1-swa-and-architecture.md)。尚未进行独立验收，后续按复习队列验证。
+- 2026-09-26 用户明确表示 CSA2 学习完成；已归档为 [CSA2 与 Compressor](../qa/2026-09-26-deepseek-v4-1-csa2.md)。教学实现和四项行为测试已完成，独立验收仍待后续复习。
+- 2026-09-26 用户明确表示 mHC 部分已经明白；已归档为 [mHC 与 Single-Pass mHC](../qa/2026-09-26-deepseek-v4-1-mhc.md)。包含两份可运行教学代码，独立验收待后续复习。
 
 ## 主线位置
 
@@ -32,7 +34,7 @@
 | PPO/GRPO | 已深入学习 | `grpo_end_to_end.py` 为教学实现 | 未运行真实模型训练 | 完成 Day19 检查及最小实测 |
 | 分布式训练与 rollout | Day18–19 已讲解 | 主要为设计与静态分析 | 未运行分布式训练 | 权重同步、staleness 及多卡边界 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
-| DeepSeek V4.1 Flash | SWA、prefill/decode、Sparse Attention、逆 RoPE 与整体架构已完成 QA 学习；待独立验收 | 已静态核对官方参考实现；`coding/deepseek_demo/` 有局部 SWA 实现、源码映射和单元测试 | PyTorch 2.14.0+cu130、CUDA 可用，3 个教学单元测试通过；未运行完整模型实验 | 学习 CSA2 Compressor、Indexer 与 Full/Reindex/Reuse |
+| DeepSeek V4.1 Flash | SWA、Sparse Attention、CSA2、Compressor、Indexer、Full/Reindex/Reuse、mHC 与 Single-Pass mHC 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现、源码映射和行为测试 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 后续学习 CED、层级 Indexer、FP4 Main KV 与 Bounded Replay，并穿插 CSA2/mHC 复习 |
 | RAG、MCP、记忆、Agent RL | 尚未系统开始 | 无项目证据 | 无 | 按路线逐步进入 |
 
 ## 薄弱点与待验收
@@ -55,6 +57,12 @@
 | SWA prefill/decode 与环形缓存 | 有源码讲解与教学实现 | 2026-09-29 | 用绝对位置和槽位情境解释缓存覆盖与索引 |
 | Sparse Attention 与逆 RoPE | 有逐行讲解，未独立实现 | 2026-10-03 | 阅读一段 gather/einsum 代码并解释 sink、共享旋转 KV |
 | DeepSeek V4.1 SWA 综合 | 已归档，未运行完整模型 | 2026-10-17 | 对比纯 SWA、SWA+CSA2、Bounded Replay 的职责边界 |
+| CSA2 全流程与 shape | 用户自评掌握，四项教学测试通过 | 2026-09-29 | 给定配置，追踪 Compressor、Indexer、局部/全局索引及输出 shape |
+| CSA2 因果性与跨层复用 | 已讲解，未独立改码 | 2026-10-03 | 用分组边界解释可见性，并判断 Full/Reindex/Reuse 的状态变化 |
+| CSA2 综合应用 | 已归档，未运行完整模型 | 2026-10-24 | 百万 token 场景下比较 SWA、Sparse Attention 与 CSA2 的存储/计算职责 |
+| mHC 矩阵与 shape | 用户自评掌握，两份数值 demo 运行通过 | 2026-09-29 | 给定两路小矩阵，手算 `pre@X`、`comb@X`、`post.T@y` |
+| mHC 参数与动态激活 | 已讲解，未独立改码 | 2026-10-05 | 区分 `fn/base/scale` 与 `pre/post/comb`，追踪完整 shape |
+| mHC 综合取舍 | 已归档，未运行真实训练 | 2026-10-19 | 比较 residual、HC、mHC、Single-Pass 的稳定性与系统成本 |
 
 ## 近期已问题型
 
@@ -62,6 +70,8 @@
 - 2026-09-25 的 [DeepSeek V4.1 Flash 导读](../qa/2026-09-25-deepseek-v4-1-overview.md)是临时答疑，已讲解概览及输入到输出主链；未向用户出题或判定掌握程度。
 - 2026-09-25 的 [SWA 逐步拆解](../qa/2026-09-25-deepseek-v4-1-swa.md)是 QA 讲解，不设置检查题。用户可随时提问；问答检测仅在正常计划学习或主动要求复习/验收时进行。
 - 2026-09-26 已将 SWA、窗口索引、Sparse Attention、逆 RoPE 和整体架构聚合为正式 QA 存档；用户表示学习完成，独立验收待后续复习。
+- 2026-09-26 已将 CSA2、Compressor、Indexer、Full/Reindex/Reuse 和配套代码归档；用户自评掌握，后续使用新 shape、因果边界和代码情境验收，不重复原讲解。
+- 2026-09-26 已将 mHC 四路入口、动态系数、矩阵读写、Sinkhorn 与 Single-Pass 归档；用户自评掌握，后续使用新矩阵和代码情境验收。
 
 ## 下一次会话
 

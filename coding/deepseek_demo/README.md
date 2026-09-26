@@ -1,4 +1,4 @@
-# DeepSeek V4.1 Flash：SWA 源码导读
+# DeepSeek V4.1 Flash：SWA 与 CSA2 源码导读
 
 本目录保存 2026-09-25 的 SWA 答疑代码。建议先读 `SOURCE_MAP.md`，再按其中的顺序阅读 `swa_attention.py`。代码复现的是**纯局部 SWA 路径**，尤其适合对照 encoder 前两层；它不是完整的 DeepSeek 模型，也不是高性能推理 kernel。
 
@@ -12,7 +12,7 @@ python run_demo.py
 python -m unittest test_swa_attention.py
 ```
 
-2026-09-25 检查的默认 Python 环境没有安装 `torch`，因此目前还没有在该环境运行通过。不需要模型权重或云 GPU。
+当前本地 Python 环境已经安装 PyTorch；这些小尺寸教学 demo 不需要模型权重或云 GPU。
 
 ## 运行后会看到什么
 
@@ -26,3 +26,21 @@ python -m unittest test_swa_attention.py
 已包含：低秩 Q、RMSNorm、共享局部 KV、RoPE 尾部旋转、局部索引 gather、attention sink、输出端逆 RoPE、分组低秩输出投影、每层独立的环形缓存。
 
 未包含：FP8/FP4 量化、TileLang/FlashAttention kernel、CSA2 全局 KV、分层索引、CED 调度、Bounded Replay、mHC、MoE、张量并行。这里的 PyTorch gather 便于观察 shape，不能作为性能基准。
+
+## CSA2 扩展
+
+- `csa2_attention.py`：Compressor、Indexer 和 Full/Reindex/Reuse 教学实现。
+- `run_csa2_demo.py`：四层 CSA2 prefill 数据流及逐步 shape。
+- `test_csa2_attention.py`：序列压缩、增量成组、跨层复用和因果可见性测试。
+- `CSA2_SOURCE_MAP.md`：本地实现与官方概念的对应关系、推荐阅读顺序和简化边界。
+- `mhc_manual_demo.py`：用 `1` 个 token、`2` 条流和 `2` 个特征手算 mHC 的读、写、混合与 Encoder 单路读出。
+- `mhc_coefficients_demo.py`：完整生成并应用动态 `pre/post/comb`，验证矩阵乘法和 Sinkhorn 双随机约束。
+
+运行方式：
+
+```powershell
+python run_csa2_demo.py
+python -m pytest -q test_csa2_attention.py
+python mhc_manual_demo.py
+python mhc_coefficients_demo.py
+```
