@@ -2,7 +2,7 @@
 
 ## 在仓库中使用学习教练
 
-在此仓库中与 Codex 对话，说“开始今天的学习计划吧”会从 [当前状态](study_agent/STATE.md)、[未来 12 周路线](study_agent/ROADMAP.md) 和既有归档接续主线，原理与代码默认各约一半；说“将今天的学习内容存档”后才生成下一个 `archives/dayNN.md`。直接提出论文、架构或代码问题则进入 QA：先讲原理、架构/数据流、作用和源码，允许继续追问；话题收尾时确认是否掌握，用户确认后再按具体主题正式存入 `qa/`。两类已确认存档都可在后续计划学习中穿插复习。详细约定见 [AGENTS.md](AGENTS.md) 和 [归档模板](study_agent/SESSION_TEMPLATE.md)。首次主线会话从 Day19 的未答检查和权重同步继续。
+在此仓库中与 Codex 对话，说“开始今天的学习计划吧”会从 [当前状态](study_agent/STATE.md)、[未来 12 周路线](study_agent/ROADMAP.md) 和既有归档接续主线，原理与代码默认各约一半；说“将今天的学习内容存档”后才生成下一个 `archives/dayNN.md`。直接提出论文、架构或代码问题则进入 QA：先讲原理、架构/数据流、作用和源码，允许继续追问；话题收尾时确认是否掌握，用户确认后再按具体主题正式存入 `qa/`。当前主线为 `LLM → Agent → 领域 Agent → Agentic RL`；Kimi K3、DeepSeek V4.1 等前沿架构保留为独立 QA 专题，不自动混入主线复习。详细约定见 [AGENTS.md](AGENTS.md) 和 [归档模板](study_agent/SESSION_TEMPLATE.md)。
 
 当前版本需要在对话中主动开始学习或复习；尚无定时推送、自动论文监控或已配置的云训练环境。以下内容保留原始导出说明和历史归档结构。
 
