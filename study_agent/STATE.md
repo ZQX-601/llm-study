@@ -19,6 +19,7 @@
 - 2026-09-26 用户明确表示 CSA2 学习完成；已归档为 [CSA2 与 Compressor](../qa/2026-09-26-deepseek-v4-1-csa2.md)。教学实现和四项行为测试已完成，独立验收仍待后续复习。
 - 2026-09-26 用户明确表示 mHC 部分已经明白；已归档为 [mHC 与 Single-Pass mHC](../qa/2026-09-26-deepseek-v4-1-mhc.md)。包含两份可运行教学代码，独立验收待后续复习。
 - 2026-09-29 用户确认已理解 ReAct、Plan-and-Execute、Reasoning、Tool Calling，以及模型决策能力与外部 Agent Runtime 的边界；已归档为 [Agentic LLM 与 Agent Runtime](../qa/2026-09-29-agentic-llm-and-agent-runtime.md)，待后续最小 Agent loop 实践验证。
+- 2026-09-29 用户完成 CSA2 mode 复习，并通过连续追问理解 CED 的预训练/prefill/decode 边界、`H20` 的双重用途及 Decoder SWA Bounded Replay 的截断误差；已归档为 [CED 与 Decoder SWA Bounded Replay](../qa/2026-09-29-deepseek-v4-1-ced-and-bounded-replay.md)，待代码验证。
 
 ## 主线位置
 
@@ -38,7 +39,7 @@
 | 分布式训练与 rollout | Day18–19 已讲解 | 主要为设计与静态分析 | 未运行分布式训练 | 暂缓；后续随 Agentic RL 训练闭环恢复 |
 | LLM 应用接口与 Agent Runtime | Day20 已完成第一轮概念学习，多项工程情境判断正确 | 仅有伪代码和静态分析 | 未实现或运行本地 Runtime | 从 RAG 停点继续；随后用 mock 工具实现最小闭环 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
-| DeepSeek V4.1 Flash | SWA、Sparse Attention、CSA2、Compressor、Indexer、Full/Reindex/Reuse、mHC 与 Single-Pass mHC 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现、源码映射和行为测试 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题，不自动进入主线 |
+| DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
 | RAG、MCP、记忆、Agent RL | RAG 已完成概览导入，其余尚未系统开始 | 无项目证据 | 无 | 继续 Chunk、召回、重排、Context Builder 与评估 |
 
 ## 薄弱点与待验收
@@ -77,6 +78,8 @@
 | CSA2 全流程与 shape | 用户自评掌握，四项教学测试通过 | 2026-09-29 | 给定配置，追踪 Compressor、Indexer、局部/全局索引及输出 shape |
 | CSA2 因果性与跨层复用 | 已讲解，未独立改码 | 2026-10-03 | 用分组边界解释可见性，并判断 Full/Reindex/Reuse 的状态变化 |
 | CSA2 综合应用 | 已归档，未运行完整模型 | 2026-10-24 | 百万 token 场景下比较 SWA、Sparse Attention 与 CSA2 的存储/计算职责 |
+| CED 训练/prefill/decode 边界 | 用户通过连续追问完成理解，无代码证据 | 2026-10-02 | 给定 `N,W,L`，画出三阶段实际经过的层数与 KV 来源 |
+| Decoder SWA Bounded Replay | 用户指出 `-W` 位置缺少此前窗口，理解截断近似来源 | 2026-10-06 | 用 `W=3`、两层 Decoder 手工追踪标准与截断窗口的误差传播 |
 | mHC 矩阵与 shape | 用户自评掌握，两份数值 demo 运行通过 | 2026-09-29 | 给定两路小矩阵，手算 `pre@X`、`comb@X`、`post.T@y` |
 | mHC 参数与动态激活 | 已讲解，未独立改码 | 2026-10-05 | 区分 `fn/base/scale` 与 `pre/post/comb`，追踪完整 shape |
 | mHC 综合取舍 | 已归档，未运行真实训练 | 2026-10-19 | 比较 residual、HC、mHC、Single-Pass 的稳定性与系统成本 |
@@ -93,6 +96,7 @@
 - 2026-09-29 已讲清 CoT、ReAct、Plan-and-Execute、原生 Tool Calling 的层次，以及 Agent 能力内嵌进模型的范围；用户自评理解，后续通过 Agent loop 代码自然验证，不在当前主线重复出纯概念题。
 - 2026-09-29 Day20 已检查结构正确但语义错误、超额退款、缺少业务校验、External State、幂等超时、版本变化和邮件 Prompt Injection 场景；下次不要原样重复，应换领域或进入代码题。
 - Day20 末尾的 RAG 职责边界题尚未回答，可作为下次主线的直接接续点。
+- 2026-09-29 已复习 CSA2 Full/Reindex/Reuse，并围绕 CED 连续讨论 prefill/decode/预训练和 `-W` replay 边界；后续验收应换成具体 `N,W,L` 数据流或代码，不重复原问题。
 
 ## 下一次会话
 
