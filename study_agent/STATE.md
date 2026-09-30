@@ -1,6 +1,6 @@
 # 学习状态
 
-更新日期：2026-09-29。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
+更新日期：2026-09-30。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
 
 ## 当前目标与资源
 
@@ -26,6 +26,7 @@
 - SFT、PPO、GRPO 的基本原理已完成初步学习；Day19 已讲 rollout/trainer 分离与 policy staleness，但检查题和工程闭环尚未完成。
 - 2026-09-28 用户调整主线：暂缓权重同步、真实 GRPO 训练等 RL 工程实操，先学习 LLM 应用基础、RAG、工具调用、MCP、Agent 架构、记忆、评估和领域 Agent 落地。
 - 2026-09-29 Day20 已完成 LLM 应用接口与 Agent Runtime 的第一轮概念学习：推理参数、Structured Output、Function Calling、多工具路由、Schema 设计、Context/State、Agent loop、失败恢复、幂等、Guardrail 和 Prompt Injection；RAG 仅完成概览导入，末尾职责边界题尚未回答。
+- 2026-09-30 Day21 已完成 RAG 基础理论第一轮：文档解析与 Chunking、Sparse/Dense/Hybrid Retrieval、Reranker、检索指标、Context Builder、Query 处理、自然语言政策与结构化规则、分层故障定位，以及 RAG/Skill/Tool/MCP/Runtime 边界。用户选择跳过 BM25 实现；尚无真实 RAG 工程或运行证据。
 - Agent 基础和领域项目完成后，再回到 Agentic RL：围绕真实 Agent 的轨迹、环境、奖励、信用分配和训练闭环，结合 SFT/PPO/GRPO 实现特定领域 Agent 与 LLM。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
@@ -37,10 +38,11 @@
 | SFT、LoRA、QLoRA、DPO | 已学习 | 有配置与原理分析 | 未记录可复现微调结果 | 建立数据、基线、微调和评估实验 |
 | PPO/GRPO | 基本原理已初步掌握 | `grpo_end_to_end.py` 为教学实现 | 未运行真实模型训练 | Agent 项目完成后，以 Agentic RL 场景恢复实操 |
 | 分布式训练与 rollout | Day18–19 已讲解 | 主要为设计与静态分析 | 未运行分布式训练 | 暂缓；后续随 Agentic RL 训练闭环恢复 |
-| LLM 应用接口与 Agent Runtime | Day20 已完成第一轮概念学习，多项工程情境判断正确 | 仅有伪代码和静态分析 | 未实现或运行本地 Runtime | 从 RAG 停点继续；随后用 mock 工具实现最小闭环 |
+| LLM 应用接口与 Agent Runtime | Day20 已完成第一轮概念学习；Day21 部署权限/状态/审批复习判断正确 | 仅有伪代码和静态分析 | 未实现或运行本地 Runtime | 继续 Tool/MCP；随后用 mock 工具实现最小闭环 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
-| RAG、MCP、记忆、Agent RL | RAG 已完成概览导入，其余尚未系统开始 | 无项目证据 | 无 | 继续 Chunk、召回、重排、Context Builder 与评估 |
+| RAG | Day21 已完成基础理论第一轮；能区分主要组件和故障层，指标与职责错误经新场景纠正 | 无保留的代码产物；BM25 实现按用户选择跳过 | 未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段完成真实检索与评估闭环 |
+| MCP、记忆、Agent RL | 尚未系统完成；MCP 只完成与 RAG 的边界说明和基础导入 | 无项目证据 | 无 | 继续 Tool Calling 与 MCP 主线 |
 
 ## 薄弱点与待验收
 
@@ -51,7 +53,8 @@
 | 微调实战 | 缺少数据切分、训练配置和独立评估的实验产物 | 高 | 完成 LoRA/QLoRA 基线对照 | 阶段 2 |
 | 代码能力 | 现有学习以问答和静态分析为主 | 高 | 读码、改错、实现、运行四类任务轮换 | 每周 |
 | LLM 应用接口实操 | Day20 只有概念问答和静态片段，没有可运行 Runtime | 高 | 使用 mock model/tool 实现 schema、业务校验、状态机、幂等与失败恢复 | Week 1 实操 |
-| RAG 基础 | 只完成主链概览，停点问题未回答 | 高 | 先回答 RAG/Tool/Runtime 职责题，再完成本地可复现检索基线 | 下次主线 |
+| RAG 工程实操 | 基础理论完成第一轮，但没有 Parser、Embedding、向量库、Reranker 或评估运行证据 | 高 | 在领域 Agent 项目中完成真实文档到检索评估的最小闭环 | 领域 Agent v1 阶段 |
+| RAG 检索指标 | `Hit@K` 曾与命中数、Precision 混淆，经多 Query 新场景纠正 | 中 | 使用实际 Top-K 输出编写并运行指标函数 | 2026-10-03 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -64,6 +67,9 @@
 | 超时、幂等与结果未知 | Day20 概念回答正确，经补充后理解按原幂等键查询 | 2026-10-02 | 阅读一段错误重试代码并定位重复执行风险 |
 | Proposal、确认与 commit | Day20 理解版本变化后不能执行 | 2026-10-06 | 设计一个高风险工具合约和状态迁移 |
 | Context、State、Memory 与 Runtime | Day20 概念理解，无独立实现 | 2026-10-20 | 在领域 Agent 代码中定位各层并解释信任边界 |
+| RAG 分层故障定位 | Day21 能定位 Parser；Reranker 场景经纠正后理解 | 2026-10-01 | 给定新 Trace，只修改最早失败层并说明证据 |
+| RAG 检索指标与证据完整性 | Day21 概念题经纠正后通过，无代码证据 | 2026-10-03 | 对实际 Top-K 计算 Hit/Recall/Precision，并判断多证据缺口 |
+| RAG/Tool/Runtime 合同 | Day21 情境判断基本正确，无实现 | 2026-10-07 | 为新领域请求设计知识、事实、规则和输出 Schema |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -95,9 +101,9 @@
 - 2026-09-26 已将 mHC 四路入口、动态系数、矩阵读写、Sinkhorn 与 Single-Pass 归档；用户自评掌握，后续使用新矩阵和代码情境验收。
 - 2026-09-29 已讲清 CoT、ReAct、Plan-and-Execute、原生 Tool Calling 的层次，以及 Agent 能力内嵌进模型的范围；用户自评理解，后续通过 Agent loop 代码自然验证，不在当前主线重复出纯概念题。
 - 2026-09-29 Day20 已检查结构正确但语义错误、超额退款、缺少业务校验、External State、幂等超时、版本变化和邮件 Prompt Injection 场景；下次不要原样重复，应换领域或进入代码题。
-- Day20 末尾的 RAG 职责边界题尚未回答，可作为下次主线的直接接续点。
+- 2026-09-30 已回答 Day20 的 RAG 职责边界停点，并系统完成 RAG 基础第一轮。近期题型已覆盖 Chunk 完整性、BM25/Dense 选择、Reranker/Runtime、Hit/Recall/Precision、版本过滤、缺知识/缺事实路由、Query 分解和 Parser/Reranker 故障定位；后续复习应换领域或进入代码 Trace，不原样重复。
 - 2026-09-29 已复习 CSA2 Full/Reindex/Reuse，并围绕 CED 连续讨论 prefill/decode/预训练和 `-W` replay 边界；后续验收应换成具体 `N,W,L` 数据流或代码，不重复原问题。
 
 ## 下一次会话
 
-若用户启动计划学习：从 Day20 的 RAG 停点题继续，进入 Chunk、Embedding、稀疏/稠密/混合召回、reranker、Context Builder 和离线评估；随后用 mock model/tool 建立不依赖 API 的最小 Runtime 代码证据。暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA 复习。若用户直接提问，则进入独立 QA，不强行切回主线。
+若用户启动计划学习：从 Tool Calling 与 MCP 继续，讲清工具发现、Tool Schema、MCP Host/Client/Server、权限分层和只读/写操作边界，再进入超时、重试、幂等与显式 Agent loop。RAG 工程实操留到领域 Agent 项目接回；暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA 复习。若用户直接提问，则进入独立 QA，不强行切回主线。
