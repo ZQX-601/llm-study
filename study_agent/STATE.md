@@ -1,6 +1,6 @@
 # 学习状态
 
-更新日期：2026-10-01。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
+更新日期：2026-10-03。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
 
 ## 当前目标与资源
 
@@ -28,6 +28,7 @@
 - 2026-09-29 Day20 已完成 LLM 应用接口与 Agent Runtime 的第一轮概念学习：推理参数、Structured Output、Function Calling、多工具路由、Schema 设计、Context/State、Agent loop、失败恢复、幂等、Guardrail 和 Prompt Injection；RAG 仅完成概览导入，末尾职责边界题尚未回答。
 - 2026-09-30 Day21 已完成 RAG 基础理论第一轮：文档解析与 Chunking、Sparse/Dense/Hybrid Retrieval、Reranker、检索指标、Context Builder、Query 处理、自然语言政策与结构化规则、分层故障定位，以及 RAG/Skill/Tool/MCP/Runtime 边界。用户选择跳过 BM25 实现；尚无真实 RAG 工程或运行证据。
 - 2026-10-01 Day22 已完成 Tool Calling 与 MCP 第一轮：Tool Schema、动态发现、Host/Runtime/Client/Server、stdio/Streamable HTTP、Tools/Resources/Prompts、权限分层、超时/幂等/RESULT_UNKNOWN、Prompt Injection 和跨 Server 数据流。已产出训练平台 MCP 静态教学代码和 3 项 Host 状态机测试；未安装运行真实 MCP SDK 或连接训练平台。
+- 2026-10-03 Day23 已完成单 Agent 核心循环第一轮：TaskState、Policy、ToolAction/FinalAction、Runtime 校验、Tool Bridge、Observation、Verifier、Trace、预算与停止条件。已产出可运行 mock Runtime；13 项测试通过。用户完成指标手算、代码追踪和局部补全，并发现“无证据 FinalAction 会被提前接受”的缺口；尚未独立从零实现或接入真实 LLM/MCP。
 - Agent 基础和领域项目完成后，再回到 Agentic RL：围绕真实 Agent 的轨迹、环境、奖励、信用分配和训练闭环，结合 SFT/PPO/GRPO 实现特定领域 Agent 与 LLM。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
@@ -39,12 +40,12 @@
 | SFT、LoRA、QLoRA、DPO | 已学习 | 有配置与原理分析 | 未记录可复现微调结果 | 建立数据、基线、微调和评估实验 |
 | PPO/GRPO | 基本原理已初步掌握 | `grpo_end_to_end.py` 为教学实现 | 未运行真实模型训练 | Agent 项目完成后，以 Agentic RL 场景恢复实操 |
 | 分布式训练与 rollout | Day18–19 已讲解 | 主要为设计与静态分析 | 未运行分布式训练 | 暂缓；后续随 Agentic RL 训练闭环恢复 |
-| LLM 应用接口与 Agent Runtime | Day20 已完成第一轮概念学习；Day21–22 的权限、状态、工具边界判断基本正确 | Day22 有 Host 有界重试状态机和 MCP Client 片段 | 3 项纯状态机测试通过；未实现完整 Runtime | 使用训练平台工具环境实现显式 Agent loop |
+| LLM 应用接口与 Agent Runtime | Day20–23 已完成接口、状态、工具边界和显式 Agent Loop 第一轮；能区分 Policy/Runtime/Tool/Verifier | `agent_loop.py` 含 TaskState、Action、Tool Bridge、Verifier、Trace 和停止条件 | mock Runtime 共 13 项测试通过；用户完成局部代码补全，未独立从零实现 | 在记忆阶段复用 TaskState；后续接真实 LLM/MCP 与语义 Verifier |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
 | RAG | Day21 已完成基础理论第一轮；能区分主要组件和故障层，指标与职责错误经新场景纠正 | 无保留的代码产物；BM25 实现按用户选择跳过 | 未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段完成真实检索与评估闭环 |
-| MCP / Tool Use | Day22 已完成第一轮，能区分 Host/Runtime/Client/Server、Tool/Resource/Prompt 与权限边界 | `coding/training_platform_mcp/` 含静态 Server、Client、Schema、API 适配和状态机 | AST 检查通过；3 项状态机测试通过；未运行真实 MCP 协议 | 在单 Agent 实操中运行动态 Tool Bridge 或等价 mock |
-| 记忆、Agent RL | 尚未系统完成 | 无项目证据 | 无 | Agent loop 后继续记忆、评估和领域 Agent |
+| MCP / Tool Use | Day22 已完成第一轮，Day23 用 Tool Bridge 接入等价 mock 并验证调用控制 | `coding/training_platform_mcp/` 含静态 Server、Client、Schema、状态机和 Agent Runtime | 13 项 mock/状态机测试通过；未运行真实 MCP 协议 | 后续把 MockToolBridge 替换成官方 SDK 动态 Bridge |
+| Agent 记忆、Agent RL | 记忆尚未系统学习；Agent RL 暂缓 | 无记忆项目证据 | 无 | 下一主线进入短期状态、长期记忆、检索、压缩与隔离 |
 
 ## 薄弱点与待验收
 
@@ -54,10 +55,11 @@
 | GRPO 实战 | 教学代码未完成真实模型训练 | 高 | 在领域 Agent 上运行最小训练并解释 reward、KL、clipfrac 与失败案例 | Agentic RL 阶段 |
 | 微调实战 | 缺少数据切分、训练配置和独立评估的实验产物 | 高 | 完成 LoRA/QLoRA 基线对照 | 阶段 2 |
 | 代码能力 | 现有学习以问答和静态分析为主 | 高 | 读码、改错、实现、运行四类任务轮换 | 每周 |
-| LLM 应用接口实操 | Day20 只有概念问答和静态片段，没有可运行 Runtime | 高 | 使用 mock model/tool 实现 schema、业务校验、状态机、幂等与失败恢复 | Week 1 实操 |
+| LLM 应用接口实操 | Day23 已有可运行 mock Runtime，但用户未独立从零实现；未接真实 LLM | 高 | 独立扩展 Action/StopReason 或完成证据合同并运行测试 | 2026-10-10 |
 | MCP 真实集成 | Day22 有较完整静态教学代码，但未安装 SDK、启动 Server、验证 OAuth 或真实 list/call/read/get_prompt | 高 | 运行最小 Server/Client 或等价 mock，检查动态 Schema、错误与权限 Trace | 单 Agent 实操阶段 |
 | RAG 工程实操 | 基础理论完成第一轮，但没有 Parser、Embedding、向量库、Reranker 或评估运行证据 | 高 | 在领域 Agent 项目中完成真实文档到检索评估的最小闭环 | 领域 Agent v1 阶段 |
-| RAG 检索指标 | `Hit@K` 曾与命中数、Precision 混淆，经多 Query 新场景纠正 | 中 | 使用实际 Top-K 输出编写并运行指标函数 | 2026-10-03 |
+| RAG 检索指标 | Day23 正确完成多 Query 宏平均与多证据完整性判断；无代码证据 | 中 | 使用实际 Top-K 输出编写并运行指标函数 | 2026-10-10 |
+| Agent 完成证据 | 最小 `required_successful_tools` 已实现，但成功调用仍不保证答案与字段一致 | 高 | 增加 claim/evidence/version 合同和领域 Verifier 测试 | Agent 评估阶段 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -71,10 +73,12 @@
 | Proposal、确认与 commit | Day20 理解版本变化后不能执行 | 2026-10-06 | 设计一个高风险工具合约和状态迁移 |
 | Context、State、Memory 与 Runtime | Day20 概念理解，无独立实现 | 2026-10-20 | 在领域 Agent 代码中定位各层并解释信任边界 |
 | RAG 分层故障定位 | Day21 能定位 Parser；Reranker 场景经纠正后理解 | 2026-10-01 | 给定新 Trace，只修改最早失败层并说明证据 |
-| RAG 检索指标与证据完整性 | Day21 概念题经纠正后通过，无代码证据 | 2026-10-03 | 对实际 Top-K 计算 Hit/Recall/Precision，并判断多证据缺口 |
+| RAG 检索指标与证据完整性 | Day23 正确手算 Hit/Recall/Precision 宏平均，并识别 Hit=1 但证据不完整；无代码证据 | 2026-10-10 | 对实际 Top-K 编写并运行指标函数，加入多证据完整性测试 |
 | RAG/Tool/Runtime 合同 | Day21 情境判断基本正确，无实现 | 2026-10-07 | 为新领域请求设计知识、事实、规则和输出 Schema |
 | MCP Host/Client/Server 与能力发现 | Day22 连续追问后能完整解释调用链，无真实协议运行 | 2026-10-02 | 给定连接与调用 Trace，定位发现、筛选、执行和鉴权职责 |
 | MCP Prompt Injection 与跨 Server 数据流 | Day22 新场景判断正确，无 Guardrail 运行证据 | 2026-10-08 | 给定 Tool 已授权且在列表中的数据外发请求，检查意图、来源、DLP 和确认 |
+| 单 Agent Loop 与失败恢复 | Day23 理论、代码追踪和局部补全完成；13 项教学测试通过 | 2026-10-04 | 给定新领域 Trace，定位 Policy/Runtime/Tool/Verifier 最早失败层并解释 StopReason |
+| FinalAction 证据合同 | 用户发现非空答案被提前接受的问题；最小 required tools 合同已实现 | 2026-10-06 | 为事实、推断、缺口和 EvidenceRef 设计结构化输出并补测试 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -110,7 +114,8 @@
 - 2026-09-29 已复习 CSA2 Full/Reindex/Reuse，并围绕 CED 连续讨论 prefill/decode/预训练和 `-W` replay 边界；后续验收应换成具体 `N,W,L` 数据流或代码，不重复原问题。
 - 2026-10-01 Day22 已覆盖 Tool 最小暴露、Schema/业务/权限、Host/Runtime/Client/Server、MCP Tool 到 REST 适配、Resources/Prompts、幂等键与操作状态、Prompt Injection 和跨 Server 外发。后续不要重复纯定义题，应进入新领域代码 Trace、真实协议运行或独立设计。
 - 2026-10-01 用户指出追问结束后“接着学”被错误解释为切换父话题；`AGENTS.md` 与归档模板已加入话题栈、显式收尾和精确停点规则。后续“接着学”默认继续当前父话题，未显式关闭不得跳转。
+- 2026-10-03 Day23 已检查 RAG 宏平均和多证据完整性；Agent Loop 题型覆盖未知工具、可恢复超时、RESULT_UNKNOWN、原幂等键、重复动作、预算、FinalAction、TaskState、Tool Bridge 和证据引用。后续不要重复定义题，应进入新领域 Trace、独立改错或真实 Bridge；用户曾把第三次重复 Action 误判为 MAX_STEPS、把远端 PROCESSING/UNKNOWN 与本地 RESULT_UNKNOWN 混用，经解释后纠正。
 
 ## 下一次会话
 
-若用户启动计划学习：Tool Calling 与 MCP 第一轮已由用户明确结束，从单 Agent 核心循环开始，使用训练平台工具环境实现显式 `TaskState → Action → Runtime 校验 → MCP/mock Tool → Observation → Verifier → 停止条件`。在此过程中自然运行或模拟动态 Tool Bridge，补 MCP 真实集成证据；不要重新从 MCP 定义讲起。RAG 工程实操留到领域 Agent 项目接回；暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA 复习。若用户直接提问，则进入独立 QA，不强行切回主线。
+若用户启动计划学习：Day23 的单 Agent 核心循环第一轮已关闭，从 Agent 记忆与上下文工程开始，先区分短期 TaskState、模型 Context 与长期 Memory，再学习写入、检索、压缩、过期、隔离和污染。用 Day23 的 Runtime/Trace 作为承载，不重新讲 Agent Loop 定义；可用一个新领域 Trace 做短复习。真实 LLM/MCP、持久化状态、语义 Verifier 和独立从零实现保留为工程证据缺口。RAG 工程实操留到领域 Agent 项目接回；暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA 复习。若用户直接提问，则进入独立 QA，不强行切回主线。

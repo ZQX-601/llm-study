@@ -1,10 +1,12 @@
-# 当前学习进度（截至 Day18，含答疑归档）
+# 当前学习进度（截至 Day23，含答疑归档）
+
+> 当前接续点与复习队列以 `study_agent/STATE.md` 为准。本文件保留阶段性历史证据。
 
 ## 结论
 
 已完成 Transformer/预训练、Decoder-only SFT、LoRA/QLoRA、DPO、高风险数据评测治理，以及 PPO 的代码级闭环。GRPO 已完成原理、核心手算、异常组处理、完整 loss、端到端单机教学源码、梯度累积、测试设计，以及 DDP 下的 group 完整性、全局控制流和变长 batching 分析。
 
-当前已能从 prompt batch 追踪到 rollout、old/ref/new log-prob、reward、group-wise advantage、有效组 mask、优化 epoch、micro-batch、optimizer batch、分布式梯度同步和训练后推理。下一步停止重复 loss/mask 算术，进入 rollout/trainer 分离、policy 权重同步与 staleness，再学习混合精度、LoRA 分布式边界并完成 GRPO 阶段验收。
+当前已能从 prompt batch 追踪到 rollout、old/ref/new log-prob、reward、group-wise advantage、有效组 mask、优化 epoch、micro-batch、optimizer batch、分布式梯度同步和训练后推理。2026-09-28 后主线已调整为先完成 LLM 应用、RAG、Tool/MCP 与 Agent：Day20–23 已完成应用接口、RAG 基础、MCP 第一轮和显式单 Agent Loop 教学实现；下一步进入 Agent 记忆与上下文工程。RL 工程闭环保留到领域 Agent v1 和评测环境建立后恢复。
 
 rollout/trainer 分离与 policy staleness 的答疑内容已单独归档到 `qa/2026-09-21-rollout-trainer-staleness.md`（不占用 `archives/dayNN.md` 序列），结论页当前停在 Policy Staleness 五问。
 
