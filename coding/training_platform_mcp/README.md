@@ -16,7 +16,9 @@ training_platform_mcp/
 ├── retry_state_machine.py       # Host 侧 RESULT_UNKNOWN 有界核对
 ├── test_retry_state_machine.py  # 不连接真实服务的状态机测试
 ├── agent_loop.py                # 显式单 Agent Runtime、Tool Bridge 与轨迹
-└── test_agent_loop.py           # 正常链路、安全边界和失败恢复测试
+├── test_agent_loop.py           # 正常链路、安全边界和失败恢复测试
+├── memory_context.py            # 长期记忆生命周期、检索与 Context Builder
+└── test_memory_context.py       # 过期、版本、隔离、污染与预算测试
 ```
 
 ## 设计主链
@@ -128,3 +130,26 @@ python -m unittest discover -s . -p "test_*.py" -v
 `get_cancel_operation` 并强制复用原 `idempotency_key`；模型不能换 key 或重新提交
 写操作。`ToolBridge` 是真实 MCP 的替换边界：后续把 `list_tools` 与 `call_tool` 接到
 官方 SDK 即可复用同一个 `run_agent`。
+
+## Agent 记忆与 Context Builder
+
+`memory_context.py` 把记忆链路拆为两个阶段：
+
+```text
+MemoryStore
+→ MemoryWriteGate 区分不保存、TaskState、长期写入和需确认
+→ 按 tenant/user/subject_key 保存版本链
+→ 按最新版本、过期时间、敏感级别和置信度检索候选记忆
+→ ContextBuilder 检查来源与 Prompt Injection
+→ 与 goal、权威 TaskState、近期 Trace 一起按优先级和 token 预算组装 Context
+```
+
+`TaskState` 的优先级始终高于检索记忆。长期记忆只以“候选记忆”进入 Context，不能
+覆盖 Runtime 的预算、确认状态、幂等键或权限结果。教学实现使用简单词项重合代替
+embedding/BM25，但租户隔离、版本、过期、软删除和 Context 准入边界可直接映射到真实
+存储系统。`GOAL` 和 `AUTHORITATIVE_TASK_STATE` 是 mandatory context；二者无法完整
+放入预算时构建过程失败关闭，不能静默丢掉权威状态后继续请求模型。
+
+对应测试覆盖：正确召回、过期记录、只使用最新版本、跨用户隔离、恶意记忆隔离，
+预算不足时优先保留目标和权威 TaskState，以及早期偏好掉出滑动窗口后可由按需检索
+重新进入 Context。
