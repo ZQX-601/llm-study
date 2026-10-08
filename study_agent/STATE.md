@@ -19,6 +19,7 @@
 - 2026-09-26 用户明确表示 CSA2 学习完成；已归档为 [CSA2 与 Compressor](../qa/2026-09-26-deepseek-v4-1-csa2.md)。教学实现和四项行为测试已完成，独立验收仍待后续复习。
 - 2026-09-26 用户明确表示 mHC 部分已经明白；已归档为 [mHC 与 Single-Pass mHC](../qa/2026-09-26-deepseek-v4-1-mhc.md)。包含两份可运行教学代码，独立验收待后续复习。
 - 2026-09-29 用户确认已理解 ReAct、Plan-and-Execute、Reasoning、Tool Calling，以及模型决策能力与外部 Agent Runtime 的边界；已归档为 [Agentic LLM 与 Agent Runtime](../qa/2026-09-29-agentic-llm-and-agent-runtime.md)，待后续最小 Agent loop 实践验证。
+- 2026-10-08 用户进一步确认理解 ReAct、Plan-and-Execute、混合模式、Runtime Loop 与分节点 System Prompt 的职责边界；已补充到原 [Agentic LLM 与 Agent Runtime](../qa/2026-09-29-agentic-llm-and-agent-runtime.md) 专题，不重复新建 QA 文件。真实 LLM Policy、模式路由和 Prompt 实现仍待后续实践。
 - 2026-09-29 用户完成 CSA2 mode 复习，并通过连续追问理解 CED 的预训练/prefill/decode 边界、`H20` 的双重用途及 Decoder SWA Bounded Replay 的截断误差；已归档为 [CED 与 Decoder SWA Bounded Replay](../qa/2026-09-29-deepseek-v4-1-ced-and-bounded-replay.md)，待代码验证。
 
 ## 主线位置
@@ -86,6 +87,7 @@
 | FinalAction 证据合同 | Day24 经服务器状态场景纠正，能区分当前事实、历史缺口和版本不一致 | 2026-10-13 | 为事实、推断、缺口和 EvidenceRef 设计结构化输出并补测试 |
 | Memory 写入、版本、隔离与污染 | Day24 完成第一轮并通过 12 项专项测试；未独立从零实现 | 2026-10-07 | 阅读错误 Pipeline，定位跨用户、旧版本、注入和 mandatory 丢失 |
 | Agent 评估硬门槛与遥测 | Day25 能选择安全门槛下的候选并理解缺失遥测；Python 条件补全未独立通过 | 2026-10-09 | 新领域区分 answer/evidence/task/case/safety，并独立补全评测条件 |
+| Agent 模式、Loop 与分节点 Prompt | 2026-10-08 QA 自评理解 ReAct、Plan-and-Execute、混合模式及 Prompt/Runtime 边界；无真实 Prompt 实现 | 2026-10-15 | 给定新领域需求，独立选择模式并设计 Planner/Executor/Verifier 合同 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -124,6 +126,7 @@
 - 2026-10-03 Day23 已检查 RAG 宏平均和多证据完整性；Agent Loop 题型覆盖未知工具、可恢复超时、RESULT_UNKNOWN、原幂等键、重复动作、预算、FinalAction、TaskState、Tool Bridge 和证据引用。后续不要重复定义题，应进入新领域 Trace、独立改错或真实 Bridge；用户曾把第三次重复 Action 误判为 MAX_STEPS、把远端 PROCESSING/UNKNOWN 与本地 RESULT_UNKNOWN 混用，经解释后纠正。
 - 2026-10-06 Day24 已覆盖 TaskState/Context/Memory、Write Gate、版本/过期、动态业务事实、滑动窗口与检索、跨用户隔离、污染、mandatory token 预算和 Memory 评估。后续不要重复酒店分类题；应进入独立改错、删除同步、真实混合检索或评测代码。用户曾把 `RUNNING + latest_error=null` 扩大为“没有发生故障”，经纠正后能识别时间范围和版本证据缺口。
 - 2026-10-08 Day25 已覆盖 answer/evidence/task/case/safety、硬门槛、跨用户与跨 Server 安全、Policy/Runtime/Tool 失败归因、Schema 版本、遥测缺失和 p50/p95。后续不要重复退款确认、工资越权或缺 `job_id` 原题；应换领域并进入独立评测扩展。用户曾两次遗漏 `trajectory_valid` 且写成 `answer_correct = true`，该点只有教练实现与测试证据，尚未独立通过。
+- 2026-10-08 QA 已补充 ReAct、Plan-and-Execute、外层计划+内层 ReAct、模式路由和 Planner/Executor/Verifier 分节点 Prompt。用户自评理解；后续不要再问纯定义，应在新领域中独立选择模式、设计状态迁移和 Prompt 合同。
 
 ## 下一次会话
 
