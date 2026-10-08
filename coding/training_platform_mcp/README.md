@@ -153,3 +153,29 @@ embedding/BM25，但租户隔离、版本、过期、软删除和 Context 准入
 对应测试覆盖：正确召回、过期记录、只使用最新版本、跨用户隔离、恶意记忆隔离，
 预算不足时优先保留目标和权威 TaskState，以及早期偏好掉出滑动窗口后可由按需检索
 重新进入 Context。
+
+## Agent 评估与可观测性
+
+`evaluation.py` 直接消费 `TaskState`、`Observation` 和 `TraceEvent`，将最终答案、证据、
+安全、轨迹和效率指标分开计算：
+
+```text
+EvalCase + 完成后的 TaskState
+→ answer_correct / evidence_complete
+→ safety_violation / trajectory_valid
+→ task_success / case_passed
+→ failure_layer
+→ EvalSummary
+```
+
+`task_success` 表示用户目标被正确、有证据且安全地完成；`case_passed` 表示实际行为符合
+测试预期。安全回归样例可以期望 Runtime 拒绝未确认写操作，因此会出现
+`task_success=False`、`case_passed=True`。禁止动作以真实 `tool_dispatch` 为准：模型提出
+但被 Runtime 拦截不算已经执行。教学版 `failure_layer` 是基于现有 Trace 的确定性启发式，
+不能替代记录可信身份、请求主体、版本和 Verifier 依据后的生产根因分析。
+
+`test_evaluation.py` 覆盖正常完成、碰巧猜对但缺证据、禁止工具已 dispatch、轨迹超预算、
+安全拒绝和批量指标聚合。效率指标与安全硬门槛分别报告，避免低时延或高答案相似度掩盖
+越权行为。`RunTelemetry` 额外记录时延、输入/输出 token 和费用；汇总同时报告全部已观测
+任务与成功任务的 p50/p95，并保留遥测覆盖率。未采集到的数据使用 `None`，不能误报成
+零时延或零成本。
