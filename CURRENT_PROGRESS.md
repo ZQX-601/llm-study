@@ -1,4 +1,4 @@
-# 当前学习进度（截至 Day23，含答疑归档）
+# 当前学习进度（截至 Day26，含答疑归档）
 
 > 当前接续点与复习队列以 `study_agent/STATE.md` 为准。本文件保留阶段性历史证据。
 
@@ -6,7 +6,14 @@
 
 已完成 Transformer/预训练、Decoder-only SFT、LoRA/QLoRA、DPO、高风险数据评测治理，以及 PPO 的代码级闭环。GRPO 已完成原理、核心手算、异常组处理、完整 loss、端到端单机教学源码、梯度累积、测试设计，以及 DDP 下的 group 完整性、全局控制流和变长 batching 分析。
 
-当前已能从 prompt batch 追踪到 rollout、old/ref/new log-prob、reward、group-wise advantage、有效组 mask、优化 epoch、micro-batch、optimizer batch、分布式梯度同步和训练后推理。2026-09-28 后主线已调整为先完成 LLM 应用、RAG、Tool/MCP 与 Agent：Day20–23 已完成应用接口、RAG 基础、MCP 第一轮和显式单 Agent Loop 教学实现；下一步进入 Agent 记忆与上下文工程。RL 工程闭环保留到领域 Agent v1 和评测环境建立后恢复。
+当前已能从 prompt batch 追踪到 rollout、old/ref/new log-prob、reward、group-wise advantage、有效组 mask、优化 epoch、micro-batch、optimizer batch、分布式梯度同步和训练后推理。2026-09-28 后主线已调整为先完成 LLM 应用、RAG、Tool/MCP 与 Agent：Day20–26 已完成应用接口、RAG 基础、MCP、显式单 Agent Loop、Memory/Context、评测可观测性和 Plan-and-Execute 第一轮。下一步先补一个公平的 ReAct/Plan-and-Execute 成对基准，再进入多 Agent。RL 工程闭环保留到领域 Agent v1 和评测环境建立后恢复。
+
+## Day24–26 阶段证据补充
+
+- Day24：Agent Memory/Context、Write Gate、版本/过期/租户隔离和污染防护，12 项专项测试通过。
+- Day25：`task_success/case_passed`、证据、安全、轨迹、失败归因和遥测聚合，目录内 34 项测试通过。
+- Day26：新建 `coding/plan_execute_agent/`，实现确定性 Plan-and-Execute、Skill 渐进加载、MCP mock、Evidence 合同、预算、重复动作、幂等恢复、版本化 Replan、证据失效和 Plan Trace 评测；新目录 18 项+旧 Runtime 34 项，合计 52 项测试通过。
+- 证据边界：Day26 代码主要由教练实现；用户已完成读码和逐题检测，尚未独立从零实现或扩展 Runtime。没有运行真实 LLM/MCP、持久化 checkpoint 或成对 ReAct 基准。
 
 rollout/trainer 分离与 policy staleness 的答疑内容已单独归档到 `qa/2026-09-21-rollout-trainer-staleness.md`（不占用 `archives/dayNN.md` 序列），结论页当前停在 Policy Staleness 五问。
 
