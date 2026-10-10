@@ -1,6 +1,6 @@
 # 学习状态
 
-更新日期：2026-10-09。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
+更新日期：2026-10-10。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
 
 ## 当前目标与资源
 
@@ -33,6 +33,7 @@
 - 2026-10-06 Day24 已完成 Agent 记忆与上下文工程第一轮：TaskState/Context/Long-term Memory、Write Gate、版本/过期/隔离、滑动窗口/摘要/按需检索、污染防护和分层评估。已产出 Memory/Context 教学实现和 12 项专项测试；目录内共 25 项测试通过。尚未接真实 embedding/BM25/reranker、持久化数据库或真实 LLM。
 - 2026-10-08 Day25 已完成 Agent 评估与可观测性第一轮：任务成功、证据完整、轨迹、安全硬门槛、失败层、离线/线上边界、遥测覆盖、token/费用和 p50/p95。已产出最小评测合同与 9 项专项测试；目录内共 34 项测试通过。实现主要由教练完成，用户尚未独立扩展评测模块或接入真实线上遥测。
 - 2026-10-09 Day26 已完成 Plan-and-Execute 第一轮：`ExecutionPlan/PlanStep`、分节点 Prompt、Step 内有限 ReAct、Skill 渐进式加载、MCP、Evidence 合同、Runtime 权限/预算、版本化 Replan、证据失效、幂等恢复和 Trace 评测。新目录 18 项、旧 Runtime 34 项，合计 52 项测试实际通过。用户完成代码阅读和逐题检测，但未独立从零实现 Runtime；真实 LLM/MCP、持久化和成对 ReAct 基准未完成。
+- 2026-10-10 Day27 已完成 ReAct vs Plan-and-Execute 公平成对基准：四个订单履约场景共享 Tool 语义、权限与整次任务预算；新增跨 Step 全局 Action/Tool 上限、统一指标和实际结果报告。补齐 RAG Top-K 最小指标代码。旧 52 项与新增 12 项合计 64 项测试通过。用户完成状态迁移、指标、代码检测、模式路由和恢复题，但实现仍主要由教练完成；真实模型遥测尚未接入。
 - Agent 基础和领域项目完成后，再回到 Agentic RL：围绕真实 Agent 的轨迹、环境、奖励、信用分配和训练闭环，结合 SFT/PPO/GRPO 实现特定领域 Agent 与 LLM。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
@@ -47,10 +48,10 @@
 | LLM 应用接口与 Agent Runtime | Day20–25 已完成接口、状态、工具边界、显式 Agent Loop、记忆、Context 与评估第一轮 | `agent_loop.py`、`memory_context.py`、`evaluation.py` 覆盖 Runtime、Trace、Memory、评测与遥测聚合 | 教学目录共 34 项测试通过；用户完成多次判断与代码阅读，未独立从零实现 | 后续接真实 LLM/MCP、持久化、语义 Verifier 与线上遥测 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
-| RAG | Day21 已完成基础理论第一轮；能区分主要组件和故障层，指标与职责错误经新场景纠正 | 无保留的代码产物；BM25 实现按用户选择跳过 | 未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段完成真实检索与评估闭环 |
+| RAG | Day21 已完成基础理论第一轮；Day27 再次检测 Hit/Recall/Precision 与多证据完整性 | `coding/rag_metrics/` 含 Top-K 指标和宏平均最小实现 | 5 项指标测试通过；未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段接实际检索输出并完成评估闭环 |
 | MCP / Tool Use | Day22 已完成第一轮，Day23 用 Tool Bridge 接入等价 mock 并验证调用控制 | `coding/training_platform_mcp/` 含静态 Server、Client、Schema、状态机和 Agent Runtime | 13 项 mock/状态机测试通过；未运行真实 MCP 协议 | 后续把 MockToolBridge 替换成官方 SDK 动态 Bridge |
-| Agent 记忆、评估与 Agent RL | Day24–25 已完成记忆、Context、评估与可观测性第一轮；Agent RL 暂缓 | `memory_context.py` 与 `evaluation.py` 含准入、版本、评测合同、失败归因和遥测聚合 | Memory 12 项、Evaluation 9 项测试通过；无真实检索、持久化或线上 Trace | 下一主线先实现 Plan-and-Execute，再进入多 Agent；后续补独立评测扩展与真实遥测 |
-| Plan-and-Execute 高级编排 | Day26 已完成计划合同、分节点 Prompt、Skill 渐进加载、Step 内有限 ReAct、Replan、恢复和评测第一轮 | `coding/plan_execute_agent/` 含确定性 Planner/Executor、EvidenceRequirement、DispatchRecord、Trace 评测和 Skill/MCP mock | 新目录 18 项+旧 Runtime 34 项测试通过；用户已读码和逐题检测，未独立从零实现 | 补成对 ReAct 实测和独立扩展，然后进入多 Agent |
+| Agent 记忆、评估与 Agent RL | Day24–25 已完成记忆、Context、评估与可观测性第一轮；Agent RL 暂缓 | `memory_context.py` 与 `evaluation.py` 含准入、版本、评测合同、失败归因和遥测聚合 | Memory 12 项、Evaluation 9 项测试通过；无真实检索、持久化或线上 Trace | 下一主线进入多 Agent；后续补独立评测扩展与真实遥测 |
+| Plan-and-Execute 高级编排 | Day26 完成机制第一轮；Day27 完成公平 ReAct 对照、模式路由和新领域状态迁移复习 | `coding/plan_execute_agent/` 新增成对 runner、全局预算与结果报告；保留 Planner/Executor/Evidence/Trace 实现 | 旧 52 项+新增 12 项合计 64 项通过；用户已读码和逐题检测，未独立从零实现 | 第一阶段闭合；下一主线进入多 Agent，同时保留独立扩展缺口 |
 
 ## 薄弱点与待验收
 
@@ -63,12 +64,12 @@
 | LLM 应用接口实操 | Day23 已有可运行 mock Runtime，但用户未独立从零实现；未接真实 LLM | 高 | 独立扩展 Action/StopReason 或完成证据合同并运行测试 | 2026-10-10 |
 | MCP 真实集成 | Day22 有较完整静态教学代码，但未安装 SDK、启动 Server、验证 OAuth 或真实 list/call/read/get_prompt | 高 | 运行最小 Server/Client 或等价 mock，检查动态 Schema、错误与权限 Trace | 单 Agent 实操阶段 |
 | RAG 工程实操 | 基础理论完成第一轮，但没有 Parser、Embedding、向量库、Reranker 或评估运行证据 | 高 | 在领域 Agent 项目中完成真实文档到检索评估的最小闭环 | 领域 Agent v1 阶段 |
-| RAG 检索指标 | Day23 正确完成多 Query 宏平均与多证据完整性判断；无代码证据 | 中 | 使用实际 Top-K 输出编写并运行指标函数 | 2026-10-10 |
+| RAG 检索指标 | Day27 已有 Top-K 与多证据完整性实现及 5 项测试；用户的完整性与集合语义错误经新题纠正 | 中 | 在领域 Agent 中接实际检索输出，独立增加一个异常标注 Case | 2026-10-17 |
 | Agent 完成证据 | Day26 已增加 key/source/subject/version 合同和入库/完成双重检查；语义 claim 与真实领域仍未接入 | 高 | 独立增加跨 Evidence 版本一致性或 claim/evidence Verifier 测试 | 领域 Agent v1 前 |
 | Agent 记忆工程 | Day24 有完整教学实现，但检索为简单词项重合，且未持久化或接真实模型 | 高 | 独立加入冲突/删除同步或替换为 embedding+BM25 并评测 | 2026-10-13 |
 | Agent 评估独立实现 | Day25 有完整教学实现，但 `task_success` 条件由教练纠正并落地，用户未独立扩展 | 高 | 独立增加 Schema 版本一致性或 FailureLayer 样例并运行测试 | 2026-10-15 |
 | Agent 线上可观测性 | 已理解缺失遥测不能记为 0；当前只有离线注入的 RunTelemetry | 中 | 接入真实调用计时、token/cost 与 trace_id，检查覆盖率和成功任务 p95 | 领域 Agent v1 阶段 |
-| Plan-and-Execute 独立实现 | Day26 教学 Runtime 和 18 项测试由教练主要完成；用户在 Action 字段访问和副作用分支上仍需提示 | 高 | 独立实现一个 Tool dispatch gate 或自动对账分支并运行测试 | 2026-10-16 |
+| Plan-and-Execute 独立实现 | Day26–27 Runtime、成对 runner 和新增测试主要由教练完成；用户在恢复字段和模式优势解释上仍需提示 | 高 | 独立新增一个 Benchmark Case、Tool dispatch gate 或自动对账分支并运行测试 | 2026-10-17 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -82,7 +83,7 @@
 | Proposal、确认与 commit | Day24 在删除管理员新场景中正确判断版本变化使旧确认失效 | 2026-10-13 | 独立设计一个高风险工具合约和状态迁移测试 |
 | Context、State、Memory 与 Runtime | Day25 能正确筛选 Context 候选；曾把 Verifier 当权威事实来源，经新场景纠正 | 2026-10-15 | 给定混合 Trace，区分 Tool 权威事实、Runtime 准入与 Verifier 证据判断 |
 | RAG 分层故障定位 | Day21 能定位 Parser；Reranker 场景经纠正后理解 | 2026-10-01 | 给定新 Trace，只修改最早失败层并说明证据 |
-| RAG 检索指标与证据完整性 | Day23 正确手算 Hit/Recall/Precision 宏平均，并识别 Hit=1 但证据不完整；无代码证据 | 2026-10-10 | 对实际 Top-K 编写并运行指标函数，加入多证据完整性测试 |
+| RAG 检索指标与证据完整性 | Day27 已编写最小指标实现并通过 5 项测试；用户经纠正后能判断 Top-K 截断、替代证据组和固定 K 分母 | 2026-10-17 | 给定实际检索输出，独立补一个异常标注或多证据 Case |
 | RAG/Tool/Runtime 合同 | Day21 情境判断基本正确，无实现 | 2026-10-07 | 为新领域请求设计知识、事实、规则和输出 Schema |
 | MCP Host/Client/Server 与能力发现 | Day22 连续追问后能完整解释调用链，无真实协议运行 | 2026-10-02 | 给定连接与调用 Trace，定位发现、筛选、执行和鉴权职责 |
 | MCP Prompt Injection 与跨 Server 数据流 | Day25 能识别未经授权把内部日志发给第三方 Server 属于安全违规；无 Guardrail 运行证据 | 2026-10-15 | 从跨 Server Trace 检查来源、敏感级别、DLP、目标信任和确认 |
@@ -91,7 +92,7 @@
 | Memory 写入、版本、隔离与污染 | Day24 完成第一轮并通过 12 项专项测试；未独立从零实现 | 2026-10-07 | 阅读错误 Pipeline，定位跨用户、旧版本、注入和 mandatory 丢失 |
 | Agent 评估硬门槛与遥测 | Day25 能选择安全门槛下的候选并理解缺失遥测；Python 条件补全未独立通过 | 2026-10-09 | 新领域区分 answer/evidence/task/case/safety，并独立补全评测条件 |
 | Agent 模式、Loop 与分节点 Prompt | Day26 已能在单查询/多步恢复场景选择 ReAct 或 Plan+有限 ReAct，并能解释 Planner/Executor/Runtime 边界 | 2026-10-16 | 给定新领域需求，独立设计 Step 合同和分节点 Prompt |
-| Plan-and-Execute 状态迁移与安全 | Day26 能区分 Retry/Replan，并在替换场景中纠正为“缺确认转人工、无 dispatch、无已发生安全违规” | 2026-10-10 | 换领域追踪 Plan/Step/Dispatch/Verifier Trace，判断最终状态和最早失败层 |
+| Plan-and-Execute 状态迁移与安全 | Day27 在订单场景正确判断 NeedsHuman/无 dispatch、超时 Retry、主体变化 Replan；恢复字段需提示后完成 | 2026-10-17 | 阅读新的恢复 Trace，检查 Step、Evidence、Dispatch 和全局预算是否可安全复用 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -132,7 +133,8 @@
 - 2026-10-08 Day25 已覆盖 answer/evidence/task/case/safety、硬门槛、跨用户与跨 Server 安全、Policy/Runtime/Tool 失败归因、Schema 版本、遥测缺失和 p50/p95。后续不要重复退款确认、工资越权或缺 `job_id` 原题；应换领域并进入独立评测扩展。用户曾两次遗漏 `trajectory_valid` 且写成 `answer_correct = true`，该点只有教练实现与测试证据，尚未独立通过。
 - 2026-10-08 QA 已补充 ReAct、Plan-and-Execute、外层计划+内层 ReAct、模式路由和 Planner/Executor/Verifier 分节点 Prompt。用户自评理解；后续不要再问纯定义，应在新领域中独立选择模式、设计状态迁移和 Prompt 合同。
 - 2026-10-09 Day26 已覆盖 Retry/Replan、Skill 渐进加载、Evidence 来源/主体/版本、路径逃逸、Action/Tool 预算、重复动作、幂等恢复、危险动作转人工、Replan 版本所有权和证据归档。用户曾把主体替换判为 Retry，把缺确认的副作用判为会 dispatch 且已违规，换场景后均纠正。后续不重复本日原题，应转为独立改码、自动对账或成对基准。
+- 2026-10-10 Day27 已覆盖订单场景 NeedsHuman/Retry/Replan、RAG Top-K、多证据组、Precision 分母、公平成对基准、模式路由与恢复入口。用户曾把 Top-2 外证据计入完整性、误判集合 `&`、认为 ReAct 不能切换目标，并遗漏恢复字段；经纠正后完成验证。后续应换场景检查真实遥测、独立新增 Case 或多 Agent handoff，不重复这些原题。
 
 ## 下一次会话
 
-若用户启动计划学习：Day26 的 Plan-and-Execute 第一轮已关闭。先用一个小型成对基准补齐尚未实测的纯 ReAct 对照：同一任务、工具、权限和总预算，从 Trace 比较成功、Action、Tool、时延和成本；同时用新领域 Trace 短复习 Retry/Replan/NeedsHuman，不重复 Day26 原题。完成后进入多 Agent 的角色权限、handoff、并发、冲突和全局停止条件。真实 LLM/MCP、持久化 checkpoint、RESULT_UNKNOWN 自动对账、claim/evidence Verifier、线上遥测和用户独立实现继续保留为工程证据缺口；暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA。若用户直接提问，则进入独立 QA。
+若用户启动计划学习：Day27 已闭合 Plan-and-Execute 第一阶段和纯 ReAct 成对基准，直接进入多 Agent：先讲适用边界与“单 Runtime 多节点”区别，再设计角色最小权限、handoff 合同、并发与结果合并、冲突处理、全局预算和停止条件。训练平台或订单履约可作为贯穿场景。真实 LLM/MCP、持久化 checkpoint、RESULT_UNKNOWN 自动对账、claim/evidence Verifier、线上遥测和用户独立实现继续保留为工程证据缺口；暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA。若用户直接提问，则进入独立 QA。

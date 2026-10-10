@@ -23,8 +23,9 @@ Planner
 3. `prompts.py`：查看真实 LLM 接入时四个节点的 Prompt 边界。
 4. `skills/training-diagnosis/`：查看 Skill 主说明和按需加载的 OOM reference。
 5. `plan_evaluation.py`：查看如何从 Trace 重算成功、安全和预算指标。
-6. `test_plan_execute.py` 与 `test_plan_evaluation.py`：查看正常、失败、重规划、
-   人工确认、恢复和评测测试。
+6. `paired_benchmark.py`：查看 ReAct 与 Plan-and-Execute 如何共享订单任务、Tool 和总预算。
+7. `test_plan_execute.py`、`test_plan_evaluation.py` 与 `test_paired_benchmark.py`：查看正常、
+   失败、重规划、人工确认、恢复、评测和成对实验测试。
 
 ## 三层 Skill 加载
 
@@ -71,6 +72,9 @@ Step 内同时有 `max_actions_per_step` 和 `max_tool_calls_per_step`：前者�
 生成 Action fingerprint，默认在第三次相同调用前以 `REPEATED_ACTION` 停止；只有显式
 声明 `allows_polling` 的工具可以重复轮询，但仍受 Tool 总预算限制。
 
+跨 Step 的公平实验还要设置 `max_total_actions` 和 `max_total_tool_calls`。Runtime 从完整
+Trace 重算已消耗总量，所以 Replan、增加 Step 或中断恢复都不会重置整次任务预算。
+
 ## Evidence 合同
 
 `required_evidence` 只表示存在性；关键 Step 使用 `EvidenceRequirement` 同时约束
@@ -90,6 +94,10 @@ Step 内同时有 `max_actions_per_step` 和 `max_tool_calls_per_step`：前者�
 `plan_evaluation.py` 不盲信 Plan 的 `COMPLETED` 标志，而是从 Evidence 合同和 Trace 重新
 计算 `task_success`、`case_passed`、安全违规、轨迹合法性、Action、Tool call、Retry 和
 Replan 次数。对比 ReAct 与 Plan-and-Execute 时必须使用同一批任务和可比的总预算。
+
+`paired_benchmark.py` 用订单履约的单工具查询、多步诊断、可恢复超时和目标变化四类
+任务完成成对实验。报告把正确性、Evidence、轨迹和安全硬门槛，与 Action、Tool、
+Replan、实际运行时延等效率指标分开；未接入的 Token 和费用遥测保持 `None`。
 
 Replan 时，Runtime 会强制维护 `plan_id`、原始 goal、递增的 `plan_version` 和
 `replan_count`，不信任 Planner 返回的审计字段。旧 Evidence 会用新计划合同重新验证：
@@ -111,6 +119,7 @@ Replan 时，Runtime 会强制维护 `plan_id`、原始 goal、递增的 `plan_v
 
 ```bash
 python demo.py
+python paired_benchmark.py
 python -m unittest discover -s . -p 'test_*.py' -v
 ```
 

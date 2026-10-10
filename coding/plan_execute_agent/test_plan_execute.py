@@ -70,6 +70,102 @@ def empty_mcp() -> MockMCPClient:
 
 
 class PlanExecuteTest(unittest.IsolatedAsyncioTestCase):
+    async def test_total_action_budget_is_shared_across_steps(self) -> None:
+        plan = ExecutionPlan(
+            "global-actions",
+            1,
+            "验证全局 Action 预算",
+            [
+                PlanStep("first", "完成第一步"),
+                PlanStep("second", "完成第二步", dependencies=("first",)),
+            ],
+        )
+        state = await run_plan_execute(
+            goal=plan.goal,
+            planner=ScriptedPlanner(plan),
+            executor=ScriptedStepExecutor(
+                {
+                    "first": [CompleteStepAction("第一步完成")],
+                    "second": [CompleteStepAction("第二步完成")],
+                }
+            ),
+            verifier=EvidencePlanVerifier(),
+            final_writer=StaticWriter(),
+            skill_registry=SkillRegistry(ROOT / "skills"),
+            mcp_client=empty_mcp(),
+            max_total_actions=1,
+        )
+
+        self.assertEqual(state.plan.status, PlanStatus.FAILED)
+        self.assertEqual(state.stop_reason, "TOTAL_ACTION_LIMIT")
+        self.assertEqual(
+            sum(event.phase == "executor_decision" for event in state.trace),
+            1,
+        )
+
+    async def test_total_tool_budget_is_shared_across_steps(self) -> None:
+        plan = ExecutionPlan(
+            "global-tools",
+            1,
+            "验证全局 Tool 预算",
+            [
+                PlanStep(
+                    "first",
+                    "第一次查询",
+                    allowed_tools=frozenset({"get_training_job"}),
+                ),
+                PlanStep(
+                    "second",
+                    "第二次查询",
+                    dependencies=("first",),
+                    allowed_tools=frozenset({"get_training_job"}),
+                ),
+            ],
+        )
+        mcp = MockMCPClient(
+            [
+                MCPToolSpec(
+                    "get_training_job",
+                    "查询任务",
+                    require_fields("job_id"),
+                )
+            ],
+            {
+                "get_training_job": lambda args: MCPResult(
+                    True,
+                    {"job_id": args["job_id"], "status": "RUNNING"},
+                )
+            },
+        )
+        state = await run_plan_execute(
+            goal=plan.goal,
+            planner=ScriptedPlanner(plan),
+            executor=ScriptedStepExecutor(
+                {
+                    "first": [
+                        ToolAction(
+                            "get_training_job", {"job_id": "job-1"}, "first_status"
+                        ),
+                        CompleteStepAction("第一步完成"),
+                    ],
+                    "second": [
+                        ToolAction(
+                            "get_training_job", {"job_id": "job-2"}, "second_status"
+                        )
+                    ],
+                }
+            ),
+            verifier=EvidencePlanVerifier(),
+            final_writer=StaticWriter(),
+            skill_registry=SkillRegistry(ROOT / "skills"),
+            mcp_client=mcp,
+            max_total_tool_calls=1,
+        )
+
+        self.assertEqual(state.plan.status, PlanStatus.FAILED)
+        self.assertEqual(state.stop_reason, "TOTAL_TOOL_CALL_LIMIT")
+        self.assertEqual(len(mcp.call_history), 1)
+
     def test_evidence_requirement_checks_provenance_and_optional_version(self) -> None:
         requirement = EvidenceRequirement(
             "error_log",

@@ -641,19 +641,33 @@ async def run_plan_execute(
     max_actions_per_step: int = 6,
     max_tool_calls_per_step: int = 4,
     max_replans: int = 1,
+    max_total_actions: int | None = None,
+    max_total_tool_calls: int | None = None,
 ) -> PlanRunState:
     """运行完整 Plan-and-Execute Loop。
 
     输入/输出没有张量；核心状态是 ``PlanRunState``。每个 Step 的内部 Action 数量由
-    ``max_actions_per_step`` 限制，对应有限步 ReAct，防止模型无限循环。
+    ``max_actions_per_step`` 限制单个 Step 内的有限 ReAct；两个 ``max_total_*``
+    参数限制整次任务，避免多 Step 让总预算隐式倍增。恢复执行时，总量从已有 Trace
+    重新计算，因此不能靠重启 Runtime 重置预算。
     """
 
     if max_actions_per_step < 1 or max_tool_calls_per_step < 1 or max_replans < 0:
         raise ValueError(
             "Action 和 Tool 上限必须大于 0，Replan 上限不能为负数"
         )
+    if max_total_actions is not None and max_total_actions < 1:
+        raise ValueError("总 Action 上限必须大于 0")
+    if max_total_tool_calls is not None and max_total_tool_calls < 1:
+        raise ValueError("总 Tool 上限必须大于 0")
 
     active_state = state or PlanRunState(goal=goal)
+    total_action_count = sum(
+        event.phase == "executor_decision" for event in active_state.trace
+    )
+    total_tool_call_count = sum(
+        event.phase == "mcp_tool_called" for event in active_state.trace
+    )
     skill_catalog = tuple(skill_registry.discover())
     skills_by_name = {item.name: item for item in skill_catalog}
     _record(
@@ -720,6 +734,21 @@ async def run_plan_execute(
         tool_call_count = 0
         tool_fingerprint_counts: dict[str, int] = {}
         for _ in range(max_actions_per_step):
+            if (
+                max_total_actions is not None
+                and total_action_count >= max_total_actions
+            ):
+                step.status = StepStatus.FAILED
+                plan.status = PlanStatus.FAILED
+                active_state.stop_reason = "TOTAL_ACTION_LIMIT"
+                _record(
+                    active_state,
+                    "plan_stopped",
+                    reason=active_state.stop_reason,
+                    step_id=step.step_id,
+                    total_action_count=total_action_count,
+                )
+                break
             action = await executor.decide(
                 plan,
                 step,
@@ -727,6 +756,7 @@ async def run_plan_execute(
                 skill_catalog,
                 tools,
             )
+            total_action_count += 1
             _record(
                 active_state,
                 "executor_decision",
@@ -802,6 +832,21 @@ async def run_plan_execute(
                         reason=active_state.stop_reason,
                         step_id=step.step_id,
                         tool_call_count=tool_call_count,
+                    )
+                    break
+                if (
+                    max_total_tool_calls is not None
+                    and total_tool_call_count >= max_total_tool_calls
+                ):
+                    step.status = StepStatus.FAILED
+                    plan.status = PlanStatus.FAILED
+                    active_state.stop_reason = "TOTAL_TOOL_CALL_LIMIT"
+                    _record(
+                        active_state,
+                        "plan_stopped",
+                        reason=active_state.stop_reason,
+                        step_id=step.step_id,
+                        total_tool_call_count=total_tool_call_count,
                     )
                     break
                 spec = tools_by_name[action.tool_name]
@@ -893,6 +938,7 @@ async def run_plan_execute(
                     tool_name=action.tool_name,
                 )
                 tool_call_count += 1
+                total_tool_call_count += 1
                 tool_fingerprint_counts[fingerprint] = repeated_count + 1
                 try:
                     result = await mcp_client.call_tool(
