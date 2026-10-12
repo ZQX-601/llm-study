@@ -1,6 +1,6 @@
 # 未来 12 周路线（LLM → Agent → Agentic RL）
 
-这是 2026-09-28 调整后的主线，按每周约 28 小时估算：6 天学习和练习，1 天复习、补缺与总结。用户已初步学习 SFT、PPO、GRPO 原理，因此暂缓孤立的 RL 工程练习，先建立 Agent 能力和领域任务，再回到 Agentic RL 完成真实训练闭环。既有 `LEARNING_PLAN.md` 保留为完整主题地图。
+这是 2026-09-28 调整、2026-10-12 再次更新后的主线，按每周约 28 小时估算：6 天学习和练习，1 天复习、补缺与总结。用户已初步学习 SFT、PPO、GRPO 原理，并已完成 Agent Runtime、Plan-and-Execute 和多 Agent 第一轮。用户选择暂缓真实领域 Agent v1，直接进入 Agentic RL；前期先复用现有训练平台 mock、Trace 和评测合同建立教学环境，不能把真实领域闭环记为已完成。既有 `LEARNING_PLAN.md` 保留为完整主题地图。
 
 Kimi K3、DeepSeek V4.1 等架构学习属于独立 QA 专题线，不自动穿插到本路线的计划学习、复习或阶段验收中；用户主动选择专题时再继续。
 
@@ -13,11 +13,11 @@ Kimi K3、DeepSeek V4.1 等架构学习属于独立 QA 专题线，不自动穿�
 | 5 | Agent 记忆与上下文工程：短期状态、长期记忆、检索、压缩与隔离 | 两种记忆策略对照及污染/过期案例 |
 | 6 | Agent 评估与可观测性：任务成功率、轨迹质量、成本、时延、安全边界 | 评测集、trace、错误分类和回归测试 |
 | 7 | 单 Agent 高级编排到多 Agent：Plan-and-Execute、Step 内有限 ReAct、分节点 Prompt、Replan、恢复与评测，再进入角色边界、handoff、并发、冲突和停止条件 | 一个可运行的 Plan-and-Execute 工作流、纯 ReAct 对照，以及一个可解释的多 Agent 协作工作流 |
-| 8 | 选择特定领域并构建 Agent v1：需求、数据、工具、知识、约束和验收 | 可运行领域 Agent、基线评测与失败样本库 |
-| 9 | Agentic RL 基础：trajectory、environment、reward、credit assignment、on/off-policy | 将领域 Agent 形式化为可训练环境和数据合同 |
-| 10 | 领域 Agent 的 SFT/偏好数据：轨迹清洗、成功示范、负例、verifier/reward | 可复用训练数据、奖励设计和离线评估基线 |
+| 8 | **暂缓（用户选择）**：真实领域 Agent v1、RAG/MCP/持久化与线上评测闭环 | 保留为后续工程补课，不作为开始 Agentic RL 理论与教学环境的前置门槛 |
+| 9 | Agentic RL 基础：trajectory、environment、reward、credit assignment、on/off-policy | 将现有 Agent Runtime 任务形式化为可训练环境和数据合同 |
+| 10 | Agent 轨迹的 SFT/偏好数据：轨迹清洗、成功示范、负例、verifier/reward | 可复用训练数据、奖励设计和离线评估基线 |
 | 11 | Agentic RL 训练闭环：恢复 PPO/GRPO、policy version、staleness、权重同步 | 一次最小真实训练、reward/KL/clipfrac 记录和失败分析 |
-| 12 | 领域 Agent + LLM 联合迭代、消融、部署与面试级复盘 | 项目 README、训练/评测报告、架构图、成本与边界说明 |
+| 12 | Agent Runtime + LLM 联合迭代、消融、部署与面试级复盘 | 项目 README、训练/评测报告、架构图、成本与边界说明 |
 
 第 7 周按固定顺序推进，避免把同一 Runtime 内的规划/执行职责分离误认为多 Agent：
 
@@ -49,9 +49,10 @@ Trace。真实 LLM Prompt 接入后置，先用确定性 Planner/Policy 验证 R
 - `需要掌握`：能对比方法、定位常见错误，完成代码级练习或小实验。
 - `前沿扩展`：能从一手资料说明动机、核心机制、代价和未核实部分；除非岗位需要，不要求复现整套大模型。
 
-## RL 暂停点与恢复条件
+## RL 恢复入口与真实训练门槛
 
 - 已有基础：SFT、PPO、GRPO 原理，old/new/ref log-prob，group advantage，mask、KL、clip，以及 rollout/trainer 和 staleness 的初步概念。
-- 暂缓内容：权重同步实现、真实 GRPO 训练、混合精度和 LoRA 分布式边界、RL 阶段验收。
-- 恢复条件：领域 Agent v1 已经可运行，具备稳定评测集、轨迹日志、工具环境和明确失败类型。
-- 恢复后的目标：不是孤立复现算法，而是判断领域失败能否由数据、prompt、工具、检索或训练解决，再对适合训练的问题设计 SFT/奖励/Agentic RL 闭环。
+- 当前恢复内容：先学习 trajectory、environment、reward、credit assignment、policy version、staleness 和 on/off-policy 数据准入，并把现有确定性 Agent Trace 转成训练样本合同。
+- 教学环境起点：复用现有训练平台 mock、Tool/Plan/Multi-Agent Runtime 和评测合同，因此可以立即开始 Agentic RL 原理与代码，不依赖付费资源。
+- 真实训练门槛：在启动真实 GRPO/PPO 或云资源前，仍需稳定任务环境、数据版本、可复现 reward/verifier、轨迹日志、基线评测和明确失败类型；领域 Agent v1 的缺口届时必须补齐或以等价环境证据替代。
+- 恢复后的目标：不是孤立复现算法，而是判断失败能否由数据、prompt、工具、检索或训练解决，再对适合训练的问题设计 SFT/奖励/Agentic RL 闭环。

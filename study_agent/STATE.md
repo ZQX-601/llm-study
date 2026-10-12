@@ -1,6 +1,6 @@
 # 学习状态
 
-更新日期：2026-10-10。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
+更新日期：2026-10-12。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
 
 ## 当前目标与资源
 
@@ -34,7 +34,8 @@
 - 2026-10-08 Day25 已完成 Agent 评估与可观测性第一轮：任务成功、证据完整、轨迹、安全硬门槛、失败层、离线/线上边界、遥测覆盖、token/费用和 p50/p95。已产出最小评测合同与 9 项专项测试；目录内共 34 项测试通过。实现主要由教练完成，用户尚未独立扩展评测模块或接入真实线上遥测。
 - 2026-10-09 Day26 已完成 Plan-and-Execute 第一轮：`ExecutionPlan/PlanStep`、分节点 Prompt、Step 内有限 ReAct、Skill 渐进式加载、MCP、Evidence 合同、Runtime 权限/预算、版本化 Replan、证据失效、幂等恢复和 Trace 评测。新目录 18 项、旧 Runtime 34 项，合计 52 项测试实际通过。用户完成代码阅读和逐题检测，但未独立从零实现 Runtime；真实 LLM/MCP、持久化和成对 ReAct 基准未完成。
 - 2026-10-10 Day27 已完成 ReAct vs Plan-and-Execute 公平成对基准：四个订单履约场景共享 Tool 语义、权限与整次任务预算；新增跨 Step 全局 Action/Tool 上限、统一指标和实际结果报告。补齐 RAG Top-K 最小指标代码。旧 52 项与新增 12 项合计 64 项测试通过。用户完成状态迁移、指标、代码检测、模式路由和恢复题，但实现仍主要由教练完成；真实模型遥测尚未接入。
-- Agent 基础和领域项目完成后，再回到 Agentic RL：围绕真实 Agent 的轨迹、环境、奖励、信用分配和训练闭环，结合 SFT/PPO/GRPO 实现特定领域 Agent 与 LLM。
+- 2026-10-12 Day28 已完成多 Agent 第一轮：层级式 Coordinator/Specialist、最小权限、Handoff、Context 投影、Evidence 准入、fan-out/fan-in、全局预算、循环/深度/Deadline、失败隔离、依赖传播及必需/可选分支聚合。新增目录 21 项测试通过，连同旧主线合计 85 项。用户完成逐题检测与代码阅读，但实现仍主要由教练完成；取消/迟到结果、语义冲突裁决、持久化和真实副作用 Agent 仍是缺口。
+- 2026-10-12 用户再次调整主线：暂缓第 8 周真实领域 Agent v1，下一次直接进入 Agentic RL。先复用现有训练平台 mock、Agent Trace 和评测合同建立可训练环境，不把未完成的真实 MCP/RAG/领域闭环记为已有证据。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
 ## 能力证据
@@ -50,8 +51,9 @@
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
 | RAG | Day21 已完成基础理论第一轮；Day27 再次检测 Hit/Recall/Precision 与多证据完整性 | `coding/rag_metrics/` 含 Top-K 指标和宏平均最小实现 | 5 项指标测试通过；未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段接实际检索输出并完成评估闭环 |
 | MCP / Tool Use | Day22 已完成第一轮，Day23 用 Tool Bridge 接入等价 mock 并验证调用控制 | `coding/training_platform_mcp/` 含静态 Server、Client、Schema、状态机和 Agent Runtime | 13 项 mock/状态机测试通过；未运行真实 MCP 协议 | 后续把 MockToolBridge 替换成官方 SDK 动态 Bridge |
-| Agent 记忆、评估与 Agent RL | Day24–25 已完成记忆、Context、评估与可观测性第一轮；Agent RL 暂缓 | `memory_context.py` 与 `evaluation.py` 含准入、版本、评测合同、失败归因和遥测聚合 | Memory 12 项、Evaluation 9 项测试通过；无真实检索、持久化或线上 Trace | 下一主线进入多 Agent；后续补独立评测扩展与真实遥测 |
-| Plan-and-Execute 高级编排 | Day26 完成机制第一轮；Day27 完成公平 ReAct 对照、模式路由和新领域状态迁移复习 | `coding/plan_execute_agent/` 新增成对 runner、全局预算与结果报告；保留 Planner/Executor/Evidence/Trace 实现 | 旧 52 项+新增 12 项合计 64 项通过；用户已读码和逐题检测，未独立从零实现 | 第一阶段闭合；下一主线进入多 Agent，同时保留独立扩展缺口 |
+| Agent 记忆、评估与 Agent RL | Day24–25 已完成记忆、Context、评估与可观测性第一轮；Day28 后按用户选择恢复 Agentic RL | `memory_context.py` 与 `evaluation.py` 含准入、版本、评测合同、失败归因和遥测聚合 | Memory 12 项、Evaluation 9 项测试通过；无真实检索、持久化或线上 Trace | 下一主线建立 Agentic RL trajectory/environment 合同；真实遥测后补 |
+| Plan-and-Execute 高级编排 | Day26 完成机制第一轮；Day27 完成公平 ReAct 对照、模式路由和新领域状态迁移复习 | `coding/plan_execute_agent/` 新增成对 runner、全局预算与结果报告；保留 Planner/Executor/Evidence/Trace 实现 | 旧 52 项+新增 12 项合计 64 项通过；用户已读码和逐题检测，未独立从零实现 | 第一阶段闭合；作为 Agentic RL 环境与轨迹来源复用 |
+| 多 Agent 协作 | Day28 完成层级式组织、角色权限、Handoff、Context 投影、fan-out/fan-in、失败传播与全局停止第一轮 | `coding/multi_agent_runtime/` 含确定性 Runtime、Agent、Trace、结果聚合和 21 项测试 | 旧 64 项+新增 21 项合计 85 项通过；无真实模型/MCP/持久化，用户未独立从零实现 | 第一轮闭合；取消、迟到结果、冲突裁决和副作用账本随 Agentic RL 环境按需补齐 |
 
 ## 薄弱点与待验收
 
@@ -70,6 +72,8 @@
 | Agent 评估独立实现 | Day25 有完整教学实现，但 `task_success` 条件由教练纠正并落地，用户未独立扩展 | 高 | 独立增加 Schema 版本一致性或 FailureLayer 样例并运行测试 | 2026-10-15 |
 | Agent 线上可观测性 | 已理解缺失遥测不能记为 0；当前只有离线注入的 RunTelemetry | 中 | 接入真实调用计时、token/cost 与 trace_id，检查覆盖率和成功任务 p95 | 领域 Agent v1 阶段 |
 | Plan-and-Execute 独立实现 | Day26–27 Runtime、成对 runner 和新增测试主要由教练完成；用户在恢复字段和模式优势解释上仍需提示 | 高 | 独立新增一个 Benchmark Case、Tool dispatch gate 或自动对账分支并运行测试 | 2026-10-17 |
+| 多 Agent 独立实现 | Day28 已有 21 项教学测试，但用户在原子 Handoff、迟到结果、失败传播和降级成功上经过提示纠正；代码主要由教练完成 | 高 | 独立新增一个 execution epoch、冲突或依赖传播 Case 并运行测试 | Agentic RL 环境阶段 |
+| Agentic RL 环境合同 | 用户选择跳过真实领域 Agent v1 后直接恢复 Agentic RL；现有 mock/Trace 可用于教学，但不等于真实环境稳定 | 高 | 定义 trajectory、environment step、reward、termination、policy version 和数据准入合同 | 下一次会话 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -93,6 +97,7 @@
 | Agent 评估硬门槛与遥测 | Day25 能选择安全门槛下的候选并理解缺失遥测；Python 条件补全未独立通过 | 2026-10-09 | 新领域区分 answer/evidence/task/case/safety，并独立补全评测条件 |
 | Agent 模式、Loop 与分节点 Prompt | Day26 已能在单查询/多步恢复场景选择 ReAct 或 Plan+有限 ReAct，并能解释 Planner/Executor/Runtime 边界 | 2026-10-16 | 给定新领域需求，独立设计 Step 合同和分节点 Prompt |
 | Plan-and-Execute 状态迁移与安全 | Day27 在订单场景正确判断 NeedsHuman/无 dispatch、超时 Retry、主体变化 Replan；恢复字段需提示后完成 | 2026-10-17 | 阅读新的恢复 Trace，检查 Step、Evidence、Dispatch 和全局预算是否可安全复用 |
+| 多 Agent Handoff、并发与失败传播 | Day28 能判断越权、Deadline、深度、冲突、局部重试和安全失败；曾误删兄弟分支 Evidence、误把未运行下游记为自身失败 | 2026-10-19 | 用 Agentic RL rollout Trace 检查权限、版本、迟到结果、依赖状态和全局停止 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -134,7 +139,8 @@
 - 2026-10-08 QA 已补充 ReAct、Plan-and-Execute、外层计划+内层 ReAct、模式路由和 Planner/Executor/Verifier 分节点 Prompt。用户自评理解；后续不要再问纯定义，应在新领域中独立选择模式、设计状态迁移和 Prompt 合同。
 - 2026-10-09 Day26 已覆盖 Retry/Replan、Skill 渐进加载、Evidence 来源/主体/版本、路径逃逸、Action/Tool 预算、重复动作、幂等恢复、危险动作转人工、Replan 版本所有权和证据归档。用户曾把主体替换判为 Retry，把缺确认的副作用判为会 dispatch 且已违规，换场景后均纠正。后续不重复本日原题，应转为独立改码、自动对账或成对基准。
 - 2026-10-10 Day27 已覆盖订单场景 NeedsHuman/Retry/Replan、RAG Top-K、多证据组、Precision 分母、公平成对基准、模式路由与恢复入口。用户曾把 Top-2 外证据计入完整性、误判集合 `&`、认为 ReAct 不能切换目标，并遗漏恢复字段；经纠正后完成验证。后续应换场景检查真实遥测、独立新增 Case 或多 Agent handoff，不重复这些原题。
+- 2026-10-12 Day28 已覆盖多 Agent 角色权限、Handoff、Context 投影、fan-out/fan-in、全局预算、重复/深度/Deadline、安全取消、迟到结果、幂等副作用、失败传播和降级成功。用户曾倾向于部分过滤非法 Handoff、重跑全部并发分支、用状态代替 dispatch 身份、删除成功兄弟 Evidence、把未运行下游记为自身失败，并遗漏可选失败的降级标记；均已换场景纠正。后续不要重复定义题，应在 Agentic RL trajectory 中检查版本、credit、终止和数据准入，或由用户独立补测试。
 
 ## 下一次会话
 
-若用户启动计划学习：Day27 已闭合 Plan-and-Execute 第一阶段和纯 ReAct 成对基准，直接进入多 Agent：先讲适用边界与“单 Runtime 多节点”区别，再设计角色最小权限、handoff 合同、并发与结果合并、冲突处理、全局预算和停止条件。训练平台或订单履约可作为贯穿场景。真实 LLM/MCP、持久化 checkpoint、RESULT_UNKNOWN 自动对账、claim/evidence Verifier、线上遥测和用户独立实现继续保留为工程证据缺口；暂不检查 Day19，也不自动穿插 Kimi/DeepSeek QA。若用户直接提问，则进入独立 QA。
+若用户启动计划学习：Day28 已闭合多 Agent 第一轮，按用户最新选择直接进入 Agentic RL。先把现有 Agent Trace 形式化为 trajectory/environment/observation/action/reward/termination 合同，再恢复 Day19 的 policy version、staleness、old/new/ref log-prob 与 on-policy/off-policy 数据准入；随后设计 credit assignment 和最小训练评测闭环。第 8 周真实领域 Agent v1 暂缓，真实 LLM/MCP、RAG、持久化 checkpoint、RESULT_UNKNOWN 自动对账、claim/evidence Verifier 和线上遥测继续保留为工程缺口，不得当作已完成。Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
