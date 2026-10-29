@@ -102,6 +102,17 @@ class Trajectory:
     task_id: str
     group_id: str
     environment_version: str
+    # 这些版本共同描述“Policy 当时究竟看到了什么、调用了什么、按什么规则得分”。
+    # 不能只记录 environment_version，否则 Reward 或 Tool schema 变化后无法判断旧数据
+    # 应该重新评分、重新采集，还是可以直接进入训练。
+    task_version: str = "diagnose-task-v1"
+    observation_schema_version: str = "observation-v1"
+    tool_schema_version: str = "training-tools-v1"
+    reward_version: str = "training-reward-v1"
+    verifier_version: str = "diagnosis-verifier-v1"
+    data_snapshot: str = "static-diagnosis-data-v1"
+    tokenizer_version: str = "unicode-teaching-v1"
+    chat_template_version: str = "diagnosis-prompt-v1"
     steps: list[StepRecord] = field(default_factory=list)
     success: bool = False
 

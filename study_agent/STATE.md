@@ -38,6 +38,7 @@
 - 2026-10-12 用户再次调整主线：暂缓第 8 周真实领域 Agent v1，下一次直接进入 Agentic RL。先复用现有训练平台 mock、Agent Trace 和评测合同建立可训练环境，不把未完成的真实 MCP/RAG/领域闭环记为已有证据。
 - 2026-10-27 Day29 已进入 Agentic RL：完成 Observation/Action/Decision/StepRecord/Trajectory 与 Environment 第一轮，复习 SFT、LoRA 和 PPO 主链，并用二维 token 矩阵手算 GAE。新增 `coding/agentic_rl_data/`，13 项标准库测试通过。用户实际阅读停在 `Trajectory → PPOSample` 标题之前；后续样本转换代码虽已准备，但尚未学习。
 - 2026-10-29 Day30 已完成 PPOSample、PPO batch、GRPO Group/Decision flatten 与 trajectory equal mean 第一轮；重构 PPO/GRPO 公共字段并补齐 return target，17 项测试通过。当前进入训练数据准入，停在 environment version 不一致的接纳判断。
+- 2026-10-29 Day31 已完成训练数据准入第一轮：版本合同、Reward 重算/重新采集、policy lag、动态 ratio/clipfrac/KL、GRPO 残缺组和 REJECT/QUARANTINE；进一步进入 PPO Tensor Loss，完成 causal shift、clipped surrogate、masked mean、Value/Entropy/Reference KL 概念。目录 26 项标准库测试通过；PyTorch 代码已写但默认环境未安装 `torch`，未运行 backward。停在 `.item()` 切断计算图的问题。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
 ## 能力证据
@@ -46,14 +47,14 @@
 | --- | --- | --- | --- | --- |
 | Transformer/预训练基础 | 已学习 | 有历史讲解 | 未记录真实预训练 | 小模型训练与数据流程复现 |
 | SFT、LoRA、QLoRA、DPO | 已学习 | 有配置与原理分析 | 未记录可复现微调结果 | 建立数据、基线、微调和评估实验 |
-| PPO/GRPO | Day29 恢复 PPO 主链；Day30 完成 PPO/GRPO 样本字段、GRPO 分组与多轮 Agent 聚合第一轮 | `grpo_end_to_end.py` 与 `coding/agentic_rl_data/` 为教学实现 | Agentic RL 数据目录 17 项测试通过；未运行真实模型训练 | 继续训练数据准入，再接 Tensor Loss 与真实 tokenizer/model |
+| PPO/GRPO | Day29 恢复 PPO 主链；Day30 完成样本合同与多轮聚合；Day31 完成数据准入并进入 Tensor Loss | `grpo_end_to_end.py` 与 `coding/agentic_rl_data/` 含版本准入、动态偏移检查及 PPO loss 参考 | Agentic RL 数据目录 26 项标准库测试通过；PyTorch 路径未运行 | 从 `.item()`/detach 继续，补完整 loss、backward 与真实 tokenizer/model |
 | 分布式训练与 rollout | Day18–19 已讲解 | 主要为设计与静态分析 | 未运行分布式训练 | 暂缓；后续随 Agentic RL 训练闭环恢复 |
 | LLM 应用接口与 Agent Runtime | Day20–25 已完成接口、状态、工具边界、显式 Agent Loop、记忆、Context 与评估第一轮 | `agent_loop.py`、`memory_context.py`、`evaluation.py` 覆盖 Runtime、Trace、Memory、评测与遥测聚合 | 教学目录共 34 项测试通过；用户完成多次判断与代码阅读，未独立从零实现 | 后续接真实 LLM/MCP、持久化、语义 Verifier 与线上遥测 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
 | RAG | Day21 已完成基础理论第一轮；Day27 再次检测 Hit/Recall/Precision 与多证据完整性 | `coding/rag_metrics/` 含 Top-K 指标和宏平均最小实现 | 5 项指标测试通过；未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段接实际检索输出并完成评估闭环 |
 | MCP / Tool Use | Day22 已完成第一轮，Day23 用 Tool Bridge 接入等价 mock 并验证调用控制 | `coding/training_platform_mcp/` 含静态 Server、Client、Schema、状态机和 Agent Runtime | 13 项 mock/状态机测试通过；未运行真实 MCP 协议 | 后续把 MockToolBridge 替换成官方 SDK 动态 Bridge |
-| Agent 记忆、评估与 Agent RL | Day24–25 完成记忆/评估；Day29–30 完成 Environment/Trajectory 与 PPO/GRPO 样本第一轮 | `coding/agentic_rl_data/` 含数据合同、环境、GAE、collator 与 trajectory equal 聚合 | Agentic RL 17 项测试通过；主要由教练实现 | 从训练数据准入继续；真实遥测与模型训练后补 |
+| Agent 记忆、评估与 Agent RL | Day24–25 完成记忆/评估；Day29–31 完成 Environment/Trajectory、样本、准入与 PPO loss 数值参考第一轮 | `coding/agentic_rl_data/` 含数据合同、环境、GAE、collator、准入、trajectory equal 聚合与 loss 参考 | Agentic RL 26 项标准库测试通过；主要由教练实现；无 Autograd 运行 | 继续 Tensor Loss/训练循环；真实遥测与模型训练后补 |
 | Plan-and-Execute 高级编排 | Day26 完成机制第一轮；Day27 完成公平 ReAct 对照、模式路由和新领域状态迁移复习 | `coding/plan_execute_agent/` 新增成对 runner、全局预算与结果报告；保留 Planner/Executor/Evidence/Trace 实现 | 旧 52 项+新增 12 项合计 64 项通过；用户已读码和逐题检测，未独立从零实现 | 第一阶段闭合；作为 Agentic RL 环境与轨迹来源复用 |
 | 多 Agent 协作 | Day28 完成层级式组织、角色权限、Handoff、Context 投影、fan-out/fan-in、失败传播与全局停止第一轮 | `coding/multi_agent_runtime/` 含确定性 Runtime、Agent、Trace、结果聚合和 21 项测试 | 旧 64 项+新增 21 项合计 85 项通过；无真实模型/MCP/持久化，用户未独立从零实现 | 第一轮闭合；取消、迟到结果、冲突裁决和副作用账本随 Agentic RL 环境按需补齐 |
 
@@ -61,7 +62,7 @@
 
 | 主题 | 已知问题或证据缺口 | 优先级 | 下次检查方式 | 下次检查 |
 | --- | --- | --- | --- | --- |
-| Policy staleness | Day29 能判断错误覆盖使 ratio=1；最初笼统表述为“破坏梯度”，经纠正后理解 behavior-policy 对照丢失 | 中 | 用异步 rollout 准入代码检查 policy lag、ratio/clipfrac 和拒绝策略 | PPOSample 数据准入后 |
+| Policy staleness | Day31 已理解异步 Actor/Learner 产生 lag、同步 barrier 的吞吐取舍，并完成 policy lag 与 ratio/clipfrac/KL 两级准入；实现主要由教练完成 | 中 | 换异步版本与分布偏移数据，独立判定 ACCEPT/REJECT 并补测试 | 2026-11-01 |
 | GRPO 实战 | 教学代码未完成真实模型训练 | 高 | 在领域 Agent 上运行最小训练并解释 reward、KL、clipfrac 与失败案例 | Agentic RL 阶段 |
 | 微调实战 | 缺少数据切分、训练配置和独立评估的实验产物 | 高 | 完成 LoRA/QLoRA 基线对照 | 阶段 2 |
 | 代码能力 | 现有学习以问答和静态分析为主 | 高 | 读码、改错、实现、运行四类任务轮换 | 每周 |
@@ -75,7 +76,8 @@
 | Agent 线上可观测性 | 已理解缺失遥测不能记为 0；当前只有离线注入的 RunTelemetry | 中 | 接入真实调用计时、token/cost 与 trace_id，检查覆盖率和成功任务 p95 | 领域 Agent v1 阶段 |
 | Plan-and-Execute 独立实现 | Day26–27 Runtime、成对 runner 和新增测试主要由教练完成；用户在恢复字段和模式优势解释上仍需提示 | 高 | 独立新增一个 Benchmark Case、Tool dispatch gate 或自动对账分支并运行测试 | 2026-10-17 |
 | 多 Agent 独立实现 | Day28 已有 21 项教学测试，但用户在原子 Handoff、迟到结果、失败传播和降级成功上经过提示纠正；代码主要由教练完成 | 高 | 独立新增一个 execution epoch、冲突或依赖传播 Case 并运行测试 | Agentic RL 环境阶段 |
-| Agentic RL 环境合同 | Day29–30 已有 Environment/Trajectory、PPO/GRPO collator、reward 防刷和 17 项测试；版本准入尚未闭合 | 高 | 增加 environment/reward/tool/verifier version 与准入测试 | 当前小节 |
+| Agentic RL 环境合同 | Day31 已补 task/environment/observation/tool/reward/verifier/data/tokenizer/template 版本、重处理/重采集与组准入；26 项测试通过 | 中 | 独立新增一个版本兼容或重复投递 Case，并解释分流决定 | 2026-11-05 |
+| PPO Tensor/Autograd | Day31 完成 causal shift、ratio/clipping、masked mean、Value/Entropy/KL 概念与纯 Python 数值参考；正负 Advantage 手算曾多次出错 | 高 | 从 `.item()` Bug 继续，换数值复习 surrogate，并在 PyTorch 环境执行 backward/optimizer step | 2026-10-30 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -102,6 +104,8 @@
 | 多 Agent Handoff、并发与失败传播 | Day28 能判断越权、Deadline、深度、冲突、局部重试和安全失败；曾误删兄弟分支 Evidence、误把未运行下游记为自身失败 | 2026-10-19 | 用 Agentic RL rollout Trace 检查权限、版本、迟到结果、依赖状态和全局停止 |
 | Agentic RL 轨迹与 PPO 数据 | Day29 能区分 Trace/Transition、SFT/RL 数据分流，完成 GAE/ratio/clip 复习；PPOSample 尚未阅读 | 2026-10-28 | 从 `build_ppo_samples()` 追踪字段、shape、mask 与 padding，独立解释一个 batch |
 | Agentic RL GRPO Batch 与聚合 | Day30 能区分 trajectory/decision/token 三层 shape，完成 flatten 身份恢复与等权聚合；实现主要由教练完成 | 2026-10-30 | 给定多组 ragged trajectory，独立补一个分组/聚合边界测试 |
+| Agentic RL 数据准入 | Day31 能区分 REPROCESS/RECOLLECT/REJECT/QUARANTINE，完成 policy lag、残缺组与动态偏移判断；代码主要由教练实现 | 2026-10-30 | 换一组版本、残缺 Group 与 clipfrac/KL 数据，独立给出分流及原因 |
+| PPO Tensor Loss | Day31 能追踪 causal shift 与 masked mean；正负 Advantage surrogate 和总 loss 经纠正后完成，未运行 Autograd | 2026-10-30 | 从 `.item()`/detach Bug 开始，独立补一段可 backward 的 loss 代码 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -146,7 +150,8 @@
 - 2026-10-12 Day28 已覆盖多 Agent 角色权限、Handoff、Context 投影、fan-out/fan-in、全局预算、重复/深度/Deadline、安全取消、迟到结果、幂等副作用、失败传播和降级成功。用户曾倾向于部分过滤非法 Handoff、重跑全部并发分支、用状态代替 dispatch 身份、删除成功兄弟 Evidence、把未运行下游记为自身失败，并遗漏可选失败的降级标记；均已换场景纠正。后续不要重复定义题，应在 Agentic RL trajectory 中检查版本、credit、终止和数据准入，或由用户独立补测试。
 - 2026-10-27 Day29 已覆盖 Trace/Transition、Observation/Action/Decision、SFT mask、LoRA `A/B/r/alpha`、PPO batch 层级、GAE、old/new log-prob、ratio/clip 和 Loss 角色。用户正确完成 SFT 三题、ratio 手算、负 Advantage surrogate 与可训练对象判断；曾把 old log-prob 覆盖后果笼统说成“破坏梯度”，经纠正后理解 behavior-policy 对照丢失。下一次不要重复上述定义题，直接从 PPOSample 字段和 batch shape 读码。
 - 2026-10-29 Day30 已覆盖 PPOSample/return target、GRPO 的 G 条采样、Group Advantage、PPO/GRPO 字段隔离、多轮 Agent flatten 和 trajectory equal mean。用户曾把 `[3]` trajectory 维与 `[9]` Decision forward 维混淆，经解释后理解；代码补全中写出 return 广播主体，但初始化/返回字段需提示。后续不要重复 shape 定义，直接进入版本准入、残缺组与 Tensor Loss。
+- 2026-10-29 Day31 已覆盖版本准入、Reward 重算/重新采集、policy lag、残缺 GRPO 组、动态 clipfrac/KL、causal shift、PPO clipped surrogate、masked mean、Entropy 与 old/new/ref log-prob。用户曾把高 clipfrac 判为 QUARANTINE、混淆 raw/clipped ratio，多次在 surrogate 中漏乘 Advantage 或取错 min，并在总 loss 中漏加 KL；经换例纠正。后续不要重复定义题，从 `.item()` 切断计算图、显式 detach 固定字段和真实 backward 继续。
 
 ## 下一次会话
 
-若用户启动计划学习：从 Day30 的停点 `Agentic RL｜训练数据准入` 继续。先判断 policy lag 合格但 environment version 从 v1 切到 v2 的样本是否接纳，再把 environment/reward/tool/verifier version、policy lag、ratio/clipfrac 和 GRPO group 完整性落到准入代码与测试；之后进入保持 Autograd 的 Tensor Loss。第 8 周真实领域 Agent v1 仍暂缓，真实 LLM/MCP、RAG、持久化 checkpoint、claim/evidence Verifier 和线上遥测继续保留为工程缺口。Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
+若用户启动计划学习：从 Day31 的停点 `Agentic RL｜准入样本 → Tensor Loss｜Autograd 计算图与训练循环` 继续。先回答 `.item()` 为什么切断梯度并修正代码，再显式 detach old log-prob/Advantage，组合 Policy/Value/Entropy/Reference KL，补 backward、grad clip 和 optimizer step；默认环境未安装 PyTorch，未实际运行前只能记为静态实现。之后再接 GRPO Tensor 聚合。第 8 周真实领域 Agent v1 仍暂缓，真实 LLM/MCP、RAG、持久化 checkpoint、claim/evidence Verifier 和线上遥测继续保留为工程缺口。Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。

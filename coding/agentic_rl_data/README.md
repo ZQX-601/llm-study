@@ -17,10 +17,12 @@ Agent Observation
 
 1. `contracts.py`：先认识 Observation、Action、Decision、StepRecord、Trajectory；
 2. `environment.py`：看 Agent 决策怎样经过 Runtime 变成一次环境迁移；
-3. `sample_builder.py`：看同一条轨迹如何分别服务 SFT、PPO 和 GRPO；
-4. `gae_token_demo.py`：用二维 token 矩阵从右向左手算 GAE；
-5. `demo.py`：运行三条不同质量的 rollout，观察 reward 与 group advantage；
-6. `test_agentic_rl_data.py`：用边界测试理解终止/截断、mask、staleness 和数据准入。
+3. `admission.py`：看版本合同、policy lag 与 GRPO 组完整性怎样决定数据去向；
+4. `tensor_loss.py`：看 causal shift、ratio、PPO clipping 与 masked mean；
+5. `sample_builder.py`：看同一条轨迹如何分别服务 SFT、PPO 和 GRPO；
+6. `gae_token_demo.py`：用二维 token 矩阵从右向左手算 GAE；
+7. `demo.py`：运行三条不同质量的 rollout，观察 reward 与 group advantage；
+8. `test_agentic_rl_data.py`：用边界测试理解终止/截断、mask、staleness 和数据准入。
 
 ## 运行
 
@@ -43,6 +45,13 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
 - SFT 只把合格动作当正标签，错误动作可留作 RL/偏好负例；
 - GRPO 的 rollout 必须按同一 task/prompt/environment version 分组；
 - 训练前检查 policy version、Schema、token/log-prob 对齐和终止边界。
+- Reward-only 变化可在 Trace 信息完整时重新评分；Observation、Tool 或环境因果语义变化
+  必须重新采集；
+- GRPO 组不能因某条 rollout 延迟就静默缩小 G；超时失败若已形成合法终止轨迹，则它是
+  有价值的负样本，而不是“缺失数据”。
+- 静态准入通过后，还要用 current-policy forward 的 `new_logprobs` 计算有效 Response
+  token 上的 ratio、clipfrac 与近似 KL；高分布偏移属于本轮 `REJECT`，NaN、错位等
+  数据异常才进入 `QUARANTINE`。
 
 教学简化：
 
@@ -52,9 +61,11 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
 - GRPO 把整条 Agent trajectory 视为一个 completion，并用总 reward 做组内标准化；
 - PPO 只构造训练输入，未实现 clipped objective、KL、critic loss 和 optimizer step。
 
-尚未实现：真实模型 rollout、reference/new log-prob、分布式变长 batching、数据持久化、
-reward model、真实 PPO/GRPO backward，以及云 GPU 训练。因而本目录证明的是数据合同和
-转换逻辑可以运行，不代表真实 Agentic RL 已完成训练。
+尚未实现：真实模型 rollout、分布式变长 batching、数据持久化、reward model、真实
+PPO/GRPO backward，以及云 GPU 训练。`tensor_loss.py` 已提供真实 PyTorch 写法，但当前
+环境未安装 PyTorch，只执行了等价的标准库数值参考版，不能记作 Autograd 已验证。因而
+本目录证明的是数据合同、转换逻辑和 loss 数值参考可以运行，不代表真实 Agentic RL 已
+完成训练。
 
 当前 `sample_builder.py` 还包含：PPO 的 `return_targets` batch、PPO/GRPO 公共
 `PolicyDecisionSample`、多轮 Agent GRPO 的 Decision flatten 与身份字段，以及按 trajectory

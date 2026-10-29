@@ -1,8 +1,16 @@
 from __future__ import annotations
 
+import math
 import unittest
 from dataclasses import replace
 
+from .admission import (
+    AdmissionDecision,
+    TrainingDataContract,
+    admit_grpo_group,
+    admit_policy_shift,
+    admit_trajectory,
+)
 from .demo import inefficient_actions, successful_actions, truncated_actions
 from .environment import AgentRLEnvironment, ScriptedPolicy, collect_trajectory
 from .gae_token_demo import compute_token_gae
@@ -16,6 +24,7 @@ from .sample_builder import (
     trajectory_equal_masked_mean,
     validate_trajectory,
 )
+from .tensor_loss import ppo_policy_loss_reference
 
 
 def collect(actions, *, trajectory_id="traj", max_steps=5, version=10):
@@ -27,6 +36,138 @@ def collect(actions, *, trajectory_id="traj", max_steps=5, version=10):
 
 
 class AgenticRLDataTest(unittest.TestCase):
+    def test_ppo_reference_loss_applies_causal_shift_and_masked_mean(self):
+        # 原序列位置 1、2 是 Response；位置 0 是 BOS，位置 3 是 PAD。
+        # 两个有效 token 的 loss 分别是 -2.4 和 1.6，masked mean 为 -0.4。
+        metrics = ppo_policy_loss_reference(
+            new_logprobs=[[
+                -1.0 + math.log(1.5),
+                -1.0 + math.log(0.6),
+                100.0,
+            ]],
+            old_logprobs=[[0.0, -1.0, -1.0, 0.0]],
+            advantages=[[0.0, 2.0, -2.0, 0.0]],
+            response_mask=[[0, 1, 1, 0]],
+        )
+
+        self.assertAlmostEqual(metrics.policy_loss, -0.4)
+        self.assertAlmostEqual(metrics.clipfrac, 1.0)
+        self.assertEqual(metrics.valid_token_count, 2)
+
+    def test_dynamic_admission_masks_prompt_and_padding_values(self):
+        contract = TrainingDataContract(
+            max_clipfrac=1.0,
+            max_approx_kl=1.0,
+        )
+
+        result, metrics = admit_policy_shift(
+            old_logprobs=[[-1.0, -2.0, -9.0, -9.0]],
+            new_logprobs=[[-0.95, -1.3, 100.0, 100.0]],
+            response_mask=[[1, 1, 0, 0]],
+            contract=contract,
+        )
+
+        self.assertIs(result.decision, AdmissionDecision.ACCEPT)
+        self.assertIsNotNone(metrics)
+        self.assertEqual(metrics.valid_token_count, 2)
+        self.assertAlmostEqual(metrics.clipfrac, 0.5)
+
+    def test_large_policy_shift_rejects_valid_data(self):
+        contract = TrainingDataContract(max_clipfrac=0.3)
+
+        result, metrics = admit_policy_shift(
+            old_logprobs=[[-1.0, -2.0]],
+            new_logprobs=[[-0.95, -1.3]],
+            response_mask=[[1, 1]],
+            contract=contract,
+        )
+
+        self.assertIs(result.decision, AdmissionDecision.REJECT)
+        self.assertIsNotNone(metrics)
+        self.assertAlmostEqual(metrics.clipfrac, 0.5)
+
+    def test_nan_logprob_is_quarantined(self):
+        result, metrics = admit_policy_shift(
+            old_logprobs=[[-1.0, float("nan")]],
+            new_logprobs=[[-0.9, -1.2]],
+            response_mask=[[1, 1]],
+            contract=TrainingDataContract(),
+        )
+
+        self.assertIs(result.decision, AdmissionDecision.QUARANTINE)
+        self.assertIsNone(metrics)
+
+    def test_reward_only_change_can_be_reprocessed_from_complete_trace(self):
+        trajectory = collect(successful_actions())
+        contract = TrainingDataContract(reward_version="training-reward-v2")
+
+        result = admit_trajectory(
+            trajectory,
+            contract,
+            reward_recomputable_from_trace=True,
+        )
+
+        self.assertIs(result.decision, AdmissionDecision.REPROCESS)
+        self.assertEqual(result.reason_code, "REWARD_VERSION_MISMATCH")
+
+    def test_tool_schema_change_requires_recollection(self):
+        trajectory = collect(successful_actions())
+        contract = TrainingDataContract(tool_schema_version="training-tools-v2")
+
+        result = admit_trajectory(trajectory, contract)
+
+        self.assertIs(result.decision, AdmissionDecision.RECOLLECT)
+        self.assertEqual(result.reason_code, "CAUSAL_VERSION_MISMATCH")
+
+    def test_policy_lag_is_a_cheap_admission_filter(self):
+        trajectory = collect(successful_actions(), version=10)
+        contract = TrainingDataContract(
+            current_policy_version=13,
+            max_policy_lag=2,
+        )
+
+        result = admit_trajectory(trajectory, contract)
+
+        self.assertIs(result.decision, AdmissionDecision.REJECT)
+        self.assertEqual(result.reason_code, "POLICY_TOO_STALE")
+
+    def test_incomplete_grpo_group_waits_then_rejects_as_a_whole(self):
+        trajectories = [
+            collect(successful_actions(), trajectory_id=f"rollout-{index}")
+            for index in range(3)
+        ]
+        contract = TrainingDataContract(expected_group_size=4)
+
+        waiting = admit_grpo_group(trajectories, contract)
+        timed_out = admit_grpo_group(
+            trajectories,
+            contract,
+            assembly_timed_out=True,
+        )
+
+        self.assertIs(waiting.decision, AdmissionDecision.PENDING)
+        self.assertIs(timed_out.decision, AdmissionDecision.REJECT)
+
+    def test_terminal_failure_counts_as_a_completed_grpo_rollout(self):
+        trajectories = [
+            collect(successful_actions(), trajectory_id=f"success-{index}")
+            for index in range(3)
+        ]
+        # 教学环境用 max_steps 截断来表示一条有明确边界和失败 Reward 的完整 rollout。
+        # 它可以作为组内失败样本；“失败”不等于“数据缺失”。
+        trajectories.append(
+            collect(
+                truncated_actions(),
+                trajectory_id="timeout-terminal",
+                max_steps=2,
+            )
+        )
+        contract = TrainingDataContract(expected_group_size=4)
+
+        result = admit_grpo_group(trajectories, contract)
+
+        self.assertIs(result.decision, AdmissionDecision.ACCEPT)
+
     def test_token_gae_matches_manual_calculation_and_masks_pad(self):
         deltas, advantages, returns = compute_token_gae(
             rewards=[[0.0, 0.0, 1.0, 0.0]],
