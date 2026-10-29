@@ -55,3 +55,8 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
 尚未实现：真实模型 rollout、reference/new log-prob、分布式变长 batching、数据持久化、
 reward model、真实 PPO/GRPO backward，以及云 GPU 训练。因而本目录证明的是数据合同和
 转换逻辑可以运行，不代表真实 Agentic RL 已完成训练。
+
+当前 `sample_builder.py` 还包含：PPO 的 `return_targets` batch、PPO/GRPO 公共
+`PolicyDecisionSample`、多轮 Agent GRPO 的 Decision flatten 与身份字段，以及按 trajectory
+等权聚合的纯 Python 参考实现。真实训练时需将列表聚合替换为保持 Autograd 的 Tensor
+segment/scatter 运算。

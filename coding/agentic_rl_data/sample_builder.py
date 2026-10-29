@@ -26,8 +26,8 @@ class SFTSample:
 
 
 @dataclass(frozen=True)
-class PPOSample:
-    """PPO 的一次决策样本；token 级 mask 只覆盖 response。"""
+class PolicyDecisionSample:
+    """PPO/GRPO 共用的 Policy 决策 token 数据，不包含算法专属 Advantage。"""
 
     trajectory_id: str
     step_id: int
@@ -35,6 +35,12 @@ class PPOSample:
     input_ids: tuple[int, ...]
     response_mask: tuple[int, ...]
     old_logprobs: tuple[float, ...]
+
+
+@dataclass(frozen=True)
+class PPOSample(PolicyDecisionSample):
+    """PPO 决策样本：公共 token 数据 + GAE Advantage + Critic target。"""
+
     advantage: float
     return_target: float
 
@@ -48,7 +54,24 @@ class GRPOSample:
     policy_version: int
     total_reward: float
     group_advantage: float
-    decisions: tuple[PPOSample, ...]
+    decisions: tuple[PolicyDecisionSample, ...]
+
+
+def _build_policy_decision_sample(
+    step: StepRecord, *, trajectory_id: str
+) -> PolicyDecisionSample:
+    """提取 PPO/GRPO 都需要的 token、mask 和 behavior policy 信息。"""
+
+    prompt_ids = step.decision.prompt_token_ids
+    response_ids = step.decision.response_token_ids
+    return PolicyDecisionSample(
+        trajectory_id=trajectory_id,
+        step_id=step.step_id,
+        policy_version=step.decision.policy_version,
+        input_ids=prompt_ids + response_ids,
+        response_mask=(0,) * len(prompt_ids) + (1,) * len(response_ids),
+        old_logprobs=(0.0,) * len(prompt_ids) + step.decision.old_logprobs,
+    )
 
 
 def validate_trajectory(
@@ -183,16 +206,17 @@ def build_ppo_samples(
     for step, advantage, return_target in zip(
         trajectory.steps, advantages, returns
     ):
-        prompt_ids = step.decision.prompt_token_ids
-        response_ids = step.decision.response_token_ids
+        common = _build_policy_decision_sample(
+            step, trajectory_id=trajectory.trajectory_id
+        )
         samples.append(
             PPOSample(
-                trajectory_id=trajectory.trajectory_id,
-                step_id=step.step_id,
-                policy_version=step.decision.policy_version,
-                input_ids=prompt_ids + response_ids,
-                response_mask=(0,) * len(prompt_ids) + (1,) * len(response_ids),
-                old_logprobs=(0.0,) * len(prompt_ids) + step.decision.old_logprobs,
+                trajectory_id=common.trajectory_id,
+                step_id=common.step_id,
+                policy_version=common.policy_version,
+                input_ids=common.input_ids,
+                response_mask=common.response_mask,
+                old_logprobs=common.old_logprobs,
                 advantage=advantage,
                 return_target=return_target,
             )
@@ -229,7 +253,14 @@ def build_grpo_group(
     result: list[GRPOSample] = []
     for trajectory, reward in zip(trajectories, rewards):
         advantage = 0.0 if std < epsilon else (reward - mean) / (std + epsilon)
-        decisions = tuple(build_ppo_samples(trajectory))
+        # GRPO 只复用 token/mask/old_logprob，不计算或携带 PPO 的 GAE/return。
+        # 这样 Trainer 无法误把 decision-level GAE 当作 group advantage。
+        decisions = tuple(
+            _build_policy_decision_sample(
+                step, trajectory_id=trajectory.trajectory_id
+            )
+            for step in trajectory.steps
+        )
         result.append(
             GRPOSample(
                 trajectory_id=trajectory.trajectory_id,
@@ -241,6 +272,117 @@ def build_grpo_group(
             )
         )
     return result
+
+
+def collate_grpo_batch(
+    samples: Sequence[GRPOSample], *, pad_token_id: int = 0
+) -> dict[str, object]:
+    """把嵌套的 trajectory/decision/token 展平为模型可前向的二维 batch。
+
+    `trajectory_indices` 保留每个 Decision 行的原始轨迹身份，使 Trainer 能在 token
+    forward 后按 trajectory 聚合，而不会把 Decision 行误当成独立 GRPO completion。
+    """
+
+    if not samples:
+        raise ValueError("不能 collate 空 GRPO batch")
+
+    flattened: list[tuple[int, GRPOSample, PolicyDecisionSample]] = []
+    for trajectory_index, sample in enumerate(samples):
+        if not sample.decisions:
+            raise ValueError("GRPO trajectory 至少包含一个 Policy Decision")
+        for decision in sample.decisions:
+            if decision.trajectory_id != sample.trajectory_id:
+                raise ValueError("Decision 的 trajectory_id 与 GRPOSample 不一致")
+            flattened.append((trajectory_index, sample, decision))
+
+    max_length = max(len(decision.input_ids) for _, _, decision in flattened)
+    input_ids: list[list[int]] = []
+    attention_mask: list[list[int]] = []
+    response_mask: list[list[int]] = []
+    old_logprobs: list[list[float]] = []
+    group_advantages: list[list[float]] = []
+    trajectory_indices: list[int] = []
+    trajectory_ids: list[str] = []
+    group_ids: list[str] = []
+    step_ids: list[int] = []
+
+    for trajectory_index, sample, decision in flattened:
+        padding = max_length - len(decision.input_ids)
+        input_ids.append(list(decision.input_ids) + [pad_token_id] * padding)
+        attention_mask.append([1] * len(decision.input_ids) + [0] * padding)
+        response_mask.append(list(decision.response_mask) + [0] * padding)
+        old_logprobs.append(list(decision.old_logprobs) + [0.0] * padding)
+        group_advantages.append(
+            [sample.group_advantage * mask for mask in decision.response_mask]
+            + [0.0] * padding
+        )
+        trajectory_indices.append(trajectory_index)
+        trajectory_ids.append(sample.trajectory_id)
+        group_ids.append(sample.group_id)
+        step_ids.append(decision.step_id)
+
+    return {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "response_mask": response_mask,
+        "old_logprobs": old_logprobs,
+        "group_advantages": group_advantages,
+        "trajectory_indices": trajectory_indices,
+        "trajectory_ids": trajectory_ids,
+        "group_ids": group_ids,
+        "step_ids": step_ids,
+    }
+
+
+def trajectory_equal_masked_mean(
+    *,
+    per_token_values: Sequence[Sequence[float]],
+    response_mask: Sequence[Sequence[int]],
+    trajectory_indices: Sequence[int],
+    num_trajectories: int,
+) -> tuple[float, list[float]]:
+    """先按 trajectory 聚合有效 token，再让每条 trajectory 等权平均。
+
+    这是纯 Python 教学实现。真实 PyTorch 训练可用 `scatter_add_` 或 segment reduction
+    完成同样计算，同时保持梯度流经 `per_token_values`。
+    """
+
+    if num_trajectories < 1:
+        raise ValueError("num_trajectories 必须大于 0")
+    if not (
+        len(per_token_values)
+        == len(response_mask)
+        == len(trajectory_indices)
+    ):
+        raise ValueError("Decision 行数不一致")
+
+    trajectory_sums = [0.0] * num_trajectories
+    trajectory_counts = [0] * num_trajectories
+
+    for values, mask, trajectory_index in zip(
+        per_token_values, response_mask, trajectory_indices
+    ):
+        if not 0 <= trajectory_index < num_trajectories:
+            raise ValueError("trajectory_index 越界")
+        if len(values) != len(mask):
+            raise ValueError("token 维度不一致")
+
+        for value, valid in zip(values, mask):
+            if valid not in (0, 1):
+                raise ValueError("response_mask 只能包含 0/1")
+            if valid == 1:
+                trajectory_sums[trajectory_index] += value
+                trajectory_counts[trajectory_index] += 1
+
+    if any(count == 0 for count in trajectory_counts):
+        raise ValueError("每条 trajectory 至少需要一个有效 Response token")
+
+    trajectory_means = [
+        total / count
+        for total, count in zip(trajectory_sums, trajectory_counts)
+    ]
+    objective = sum(trajectory_means) / num_trajectories
+    return objective, trajectory_means
 
 
 def collate_ppo_batch(samples: Sequence[PPOSample], *, pad_token_id: int = 0) -> dict[str, list[list[float | int]]]:
@@ -255,6 +397,7 @@ def collate_ppo_batch(samples: Sequence[PPOSample], *, pad_token_id: int = 0) ->
     response_mask: list[list[int]] = []
     old_logprobs: list[list[float]] = []
     advantages: list[list[float]] = []
+    return_targets: list[list[float]] = []
 
     for sample in samples:
         padding = max_length - len(sample.input_ids)
@@ -265,6 +408,10 @@ def collate_ppo_batch(samples: Sequence[PPOSample], *, pad_token_id: int = 0) ->
         advantages.append(
             [sample.advantage * mask for mask in sample.response_mask] + [0.0] * padding
         )
+        return_targets.append(
+            [sample.return_target * mask for mask in sample.response_mask]
+            + [0.0] * padding
+        )
 
     return {
         "input_ids": input_ids,
@@ -272,4 +419,5 @@ def collate_ppo_batch(samples: Sequence[PPOSample], *, pad_token_id: int = 0) ->
         "response_mask": response_mask,
         "old_logprobs": old_logprobs,
         "advantages": advantages,
+        "return_targets": return_targets,
     }

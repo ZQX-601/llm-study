@@ -12,12 +12,15 @@ from .contracts import (
 from .environment import AgentRLEnvironment, ScriptedPolicy, collect_trajectory
 from .sample_builder import (
     GRPOSample,
+    PolicyDecisionSample,
     PPOSample,
     SFTSample,
     build_grpo_group,
     build_ppo_samples,
     build_sft_samples,
+    collate_grpo_batch,
     collate_ppo_batch,
+    trajectory_equal_masked_mean,
     validate_trajectory,
 )
 
@@ -28,6 +31,7 @@ __all__ = [
     "Decision",
     "GRPOSample",
     "Observation",
+    "PolicyDecisionSample",
     "PPOSample",
     "RewardComponents",
     "SFTSample",
@@ -37,7 +41,9 @@ __all__ = [
     "build_grpo_group",
     "build_ppo_samples",
     "build_sft_samples",
+    "collate_grpo_batch",
     "collate_ppo_batch",
+    "trajectory_equal_masked_mean",
     "collect_trajectory",
     "validate_trajectory",
 ]

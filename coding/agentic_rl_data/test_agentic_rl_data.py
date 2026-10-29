@@ -11,7 +11,9 @@ from .sample_builder import (
     build_grpo_group,
     build_ppo_samples,
     build_sft_samples,
+    collate_grpo_batch,
     collate_ppo_batch,
+    trajectory_equal_masked_mean,
     validate_trajectory,
 )
 
@@ -130,6 +132,76 @@ class AgenticRLDataTest(unittest.TestCase):
         self.assertAlmostEqual(sum(sample.group_advantage for sample in samples), 0.0)
         self.assertGreater(samples[0].group_advantage, samples[1].group_advantage)
 
+    def test_grpo_decisions_do_not_carry_ppo_gae_or_return(self):
+        trajectories = [
+            collect(successful_actions(), trajectory_id="good"),
+            collect(inefficient_actions(), trajectory_id="inefficient"),
+        ]
+        samples = build_grpo_group(trajectories)
+        decision = samples[0].decisions[0]
+        self.assertFalse(hasattr(decision, "advantage"))
+        self.assertFalse(hasattr(decision, "return_target"))
+        self.assertEqual(decision.trajectory_id, "good")
+
+    def test_grpo_collate_flattens_decisions_but_preserves_trajectory_identity(self):
+        trajectories = [
+            collect(successful_actions(), trajectory_id="good"),
+            collect(inefficient_actions(), trajectory_id="inefficient"),
+            collect(
+                truncated_actions(),
+                trajectory_id="truncated",
+                max_steps=2,
+            ),
+        ]
+        samples = build_grpo_group(trajectories)
+        batch = collate_grpo_batch(samples)
+
+        self.assertEqual(
+            batch["trajectory_indices"],
+            [0, 0, 0, 1, 1, 1, 1, 2, 2],
+        )
+        self.assertEqual(len(batch["input_ids"]), 9)
+        self.assertEqual(len(batch["input_ids"][0]), 315)
+
+        for row, trajectory_index in enumerate(batch["trajectory_indices"]):
+            expected_advantage = samples[trajectory_index].group_advantage
+            for mask, advantage in zip(
+                batch["response_mask"][row],
+                batch["group_advantages"][row],
+            ):
+                expected = expected_advantage if mask == 1 else 0.0
+                self.assertAlmostEqual(advantage, expected)
+
+    def test_trajectory_equal_mean_removes_length_weighting(self):
+        trajectories = [
+            collect(successful_actions(), trajectory_id="good"),
+            collect(inefficient_actions(), trajectory_id="inefficient"),
+            collect(
+                truncated_actions(),
+                trajectory_id="truncated",
+                max_steps=2,
+            ),
+        ]
+        samples = build_grpo_group(trajectories)
+        batch = collate_grpo_batch(samples)
+
+        objective, trajectory_means = trajectory_equal_masked_mean(
+            per_token_values=batch["group_advantages"],
+            response_mask=batch["response_mask"],
+            trajectory_indices=batch["trajectory_indices"],
+            num_trajectories=len(samples),
+        )
+        expected_means = [sample.group_advantage for sample in samples]
+        for actual, expected in zip(trajectory_means, expected_means):
+            self.assertAlmostEqual(actual, expected)
+        self.assertAlmostEqual(objective, 0.0)
+
+        token_sum = sum(
+            sum(row) for row in batch["group_advantages"]
+        )
+        token_count = sum(sum(row) for row in batch["response_mask"])
+        self.assertGreater(token_sum / token_count, 0.1)
+
     def test_collate_masks_padding_everywhere(self):
         trajectory = collect(successful_actions())
         samples = build_ppo_samples(trajectory)
@@ -145,6 +217,18 @@ class AgenticRLDataTest(unittest.TestCase):
                 if attn == 0:
                     self.assertEqual(resp, 0)
                     self.assertEqual(advantage, 0.0)
+
+    def test_collate_broadcasts_return_only_to_response_tokens(self):
+        trajectory = collect(successful_actions())
+        samples = build_ppo_samples(trajectory)
+        batch = collate_ppo_batch(samples)
+
+        for sample, response_mask, return_targets in zip(
+            samples, batch["response_mask"], batch["return_targets"]
+        ):
+            for mask, target in zip(response_mask, return_targets):
+                expected = sample.return_target if mask == 1 else 0.0
+                self.assertAlmostEqual(target, expected)
 
 
 if __name__ == "__main__":
