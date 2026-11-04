@@ -40,6 +40,7 @@
 - 2026-10-29 Day30 已完成 PPOSample、PPO batch、GRPO Group/Decision flatten 与 trajectory equal mean 第一轮；重构 PPO/GRPO 公共字段并补齐 return target，17 项测试通过。当前进入训练数据准入，停在 environment version 不一致的接纳判断。
 - 2026-10-29 Day31 已完成训练数据准入第一轮：版本合同、Reward 重算/重新采集、policy lag、动态 ratio/clipfrac/KL、GRPO 残缺组和 REJECT/QUARANTINE；进一步进入 PPO Tensor Loss，完成 causal shift、clipped surrogate、masked mean、Value/Entropy/Reference KL 概念。目录 26 项标准库测试通过；PyTorch 代码已写但默认环境未安装 `torch`，未运行 backward。停在 `.item()` 切断计算图的问题。
 - 2026-11-02 至 2026-11-04 Day32 已完成 Tensor Loss/训练控制和权重同步第一轮：Autograd 边界、梯度累积、ragged 加权、KL early stop、GRPO trajectory Tensor 聚合、optimizer step gate、Group Policy 一致性、desired/loaded/active 版本和原子 Snapshot。目录 36 项标准库测试通过；用户选择跳过 PyTorch 安装，真实 backward/optimizer 与分布式热加载未运行。下一主题为训练指标与失败诊断，尚未开始。
+- 2026-11-04 Day33 已部分完成训练指标与失败诊断第一轮：建立任务效果、Policy 偏移、GRPO 信号、优化稳定性和系统吞吐五层指标，完成 Reward hacking、无信号、版本归因、累计漂移、Actor/Learner 失衡、切片/路由偏差和分布长尾 Trace。新增带版本身份的教学诊断规则，目录 43 项标准库测试通过。停在 loss reduction 与有效 token 尺度之前；无真实训练日志或线上告警证据。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
 ## 能力证据
@@ -48,14 +49,14 @@
 | --- | --- | --- | --- | --- |
 | Transformer/预训练基础 | 已学习 | 有历史讲解 | 未记录真实预训练 | 小模型训练与数据流程复现 |
 | SFT、LoRA、QLoRA、DPO | 已学习 | 有配置与原理分析 | 未记录可复现微调结果 | 建立数据、基线、微调和评估实验 |
-| PPO/GRPO | Day29–31 完成环境、样本与准入；Day32 完成 Tensor Loss/训练控制与 GRPO trajectory 聚合第一轮 | `coding/agentic_rl_data/` 含 PPO/GRPO loss、scatter 聚合、early stop、step gate 与版本状态机 | 36 项标准库测试通过；PyTorch 路径仅语法检查，真实 backward 未运行 | 进入训练指标与失败诊断；真实 tokenizer/model/optimizer 后补 |
+| PPO/GRPO | Day29–31 完成环境、样本与准入；Day32 完成 Tensor Loss/训练控制；Day33 部分完成训练指标与失败诊断 | `coding/agentic_rl_data/` 含 loss、scatter 聚合、step gate、版本状态机与诊断规则 | 43 项标准库测试通过；PyTorch 路径仅语法检查，真实 backward 和真实遥测未运行 | 从 loss reduction 停点继续；真实 tokenizer/model/optimizer 后补 |
 | 分布式训练与 rollout | Day18–19 初步讲解；Day32 恢复 Actor/Learner 权重发布、组版本锁和 Queue 背压 | `weight_sync.py` 为确定性教学状态机 | 状态机测试通过；无真实 checkpoint、对象存储和分布式 Actor | 后续接真实推理引擎/队列并记录同步失败与 stale rate |
 | LLM 应用接口与 Agent Runtime | Day20–25 已完成接口、状态、工具边界、显式 Agent Loop、记忆、Context 与评估第一轮 | `agent_loop.py`、`memory_context.py`、`evaluation.py` 覆盖 Runtime、Trace、Memory、评测与遥测聚合 | 教学目录共 34 项测试通过；用户完成多次判断与代码阅读，未独立从零实现 | 后续接真实 LLM/MCP、持久化、语义 Verifier 与线上遥测 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
 | RAG | Day21 已完成基础理论第一轮；Day27 再次检测 Hit/Recall/Precision 与多证据完整性 | `coding/rag_metrics/` 含 Top-K 指标和宏平均最小实现 | 5 项指标测试通过；未运行 Parser、Embedding、向量库、Reranker 或模型 | 领域 Agent 阶段接实际检索输出并完成评估闭环 |
 | MCP / Tool Use | Day22 已完成第一轮，Day23 用 Tool Bridge 接入等价 mock 并验证调用控制 | `coding/training_platform_mcp/` 含静态 Server、Client、Schema、状态机和 Agent Runtime | 13 项 mock/状态机测试通过；未运行真实 MCP 协议 | 后续把 MockToolBridge 替换成官方 SDK 动态 Bridge |
-| Agent 记忆、评估与 Agent RL | Day24–25 完成记忆/评估；Day29–32 完成 Environment/Trajectory、样本、准入、loss、训练控制和权重同步第一轮 | `coding/agentic_rl_data/` 含完整教学数据流与版本状态机 | Agentic RL 36 项标准库测试通过；主要由教练实现；无真实 Autograd/分布式运行 | 下一步训练指标与失败诊断；真实遥测与模型训练后补 |
+| Agent 记忆、评估与 Agent RL | Day24–25 完成记忆/评估；Day29–32 完成数据流、训练控制和权重同步；Day33 部分完成失败诊断 | `coding/agentic_rl_data/` 含教学数据流、版本状态机和带身份的诊断规则 | Agentic RL 43 项标准库测试通过；主要由教练实现；无真实 Autograd、遥测或分布式运行 | 继续 loss reduction/诊断闭环；真实遥测与模型训练后补 |
 | Plan-and-Execute 高级编排 | Day26 完成机制第一轮；Day27 完成公平 ReAct 对照、模式路由和新领域状态迁移复习 | `coding/plan_execute_agent/` 新增成对 runner、全局预算与结果报告；保留 Planner/Executor/Evidence/Trace 实现 | 旧 52 项+新增 12 项合计 64 项通过；用户已读码和逐题检测，未独立从零实现 | 第一阶段闭合；作为 Agentic RL 环境与轨迹来源复用 |
 | 多 Agent 协作 | Day28 完成层级式组织、角色权限、Handoff、Context 投影、fan-out/fan-in、失败传播与全局停止第一轮 | `coding/multi_agent_runtime/` 含确定性 Runtime、Agent、Trace、结果聚合和 21 项测试 | 旧 64 项+新增 21 项合计 85 项通过；无真实模型/MCP/持久化，用户未独立从零实现 | 第一轮闭合；取消、迟到结果、冲突裁决和副作用账本随 Agentic RL 环境按需补齐 |
 
@@ -81,6 +82,7 @@
 | PPO Tensor/Autograd | Day32 已完成 `.item()`/detach、causal shift、loss 组合、梯度累积、early stop 与 step gate 第一轮；用户要求不再出简单算术题 | 高 | 用代码 Bug/Trace 检查梯度路径，并在可用 PyTorch 环境执行 backward/optimizer step | 2026-11-11 |
 | GRPO Tensor 聚合 | Day32 理解 Decision flatten 后按 trajectory 聚合 sum/count 与等权 mean；`scatter_add_` 代码由教练补全 | 高 | 换 ragged trajectory，由用户独立补 Tensor 聚合或边界测试 | 2026-11-07 |
 | Actor/Learner 权重同步 | Day32 理解 trajectory/group 版本锁、desired/loaded/active、原子 Snapshot 和 LoRA/Base 兼容；无真实分布式运行 | 高 | 给定发布/刷新/在途 Group Trace，独立判断刷新、继续、重建、拒绝与背压 | 2026-11-11 |
+| Agentic RL 训练诊断 | Day33 能从 Trace 判断 Reward hacking、无 GRPO 信号、版本跳变、累计漂移、吞吐失衡和聚合掩盖；规则主要由教练实现 | 高 | 独立补一个按固定任务切片或 loss reduction 的诊断规则和边界测试 | 2026-11-07 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -111,6 +113,7 @@
 | PPO Tensor Loss | Day31 能追踪 causal shift 与 masked mean；正负 Advantage surrogate 和总 loss 经纠正后完成，未运行 Autograd | 2026-10-30 | 从 `.item()`/detach Bug 开始，独立补一段可 backward 的 loss 代码 |
 | Agentic RL Tensor 与训练控制 | Day32 完成 Autograd 边界、ragged 加权、GRPO trajectory 聚合和 step gate；实现主要由教练完成 | 2026-11-07 | 阅读含 detach/mean/scatter/early-stop Bug 的代码，定位最早错误并提出修复 |
 | Agentic RL 权重同步 | Day32 完成 trajectory/group 版本锁、Snapshot 兼容与 Actor 三版本状态机；36 项目录测试通过 | 2026-11-11 | 给定异步发布与在途 Group Trace，判断实际版本、准入和重采策略 |
+| Agentic RL 训练指标与失败诊断 | Day33 完成五层指标和主要失败 Trace 第一轮；43 项目录测试通过，尚无真实遥测 | 2026-11-07 | 换一个聚合正常但固定切片退化的场景，并独立补诊断测试 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -157,7 +160,8 @@
 - 2026-10-29 Day30 已覆盖 PPOSample/return target、GRPO 的 G 条采样、Group Advantage、PPO/GRPO 字段隔离、多轮 Agent flatten 和 trajectory equal mean。用户曾把 `[3]` trajectory 维与 `[9]` Decision forward 维混淆，经解释后理解；代码补全中写出 return 广播主体，但初始化/返回字段需提示。后续不要重复 shape 定义，直接进入版本准入、残缺组与 Tensor Loss。
 - 2026-10-29 Day31 已覆盖版本准入、Reward 重算/重新采集、policy lag、残缺 GRPO 组、动态 clipfrac/KL、causal shift、PPO clipped surrogate、masked mean、Entropy 与 old/new/ref log-prob。用户曾把高 clipfrac 判为 QUARANTINE、混淆 raw/clipped ratio，多次在 surrogate 中漏乘 Advantage 或取错 min，并在总 loss 中漏加 KL；经换例纠正。后续不要重复定义题，从 `.item()` 切断计算图、显式 detach 固定字段和真实 backward 继续。
 - 2026-11-04 Day32 已覆盖 `.item()`/detach、训练 step、梯度累积、ragged microbatch、KL 双层停止、GRPO scatter 聚合、总 loss 符号、NaN step gate、trajectory/group Policy 锁、原子 Snapshot 与 LoRA/Base 兼容。用户曾遗漏 `new_values` 梯度、detach/dtype、触发阈值 minibatch，误判 Entropy 梯度对照测试，并无法独立补 scatter；经代码 Trace 纠正。用户要求不再出简单算术题，后续只用代码/Trace/工程决策检测。真实 PyTorch 安装和 backward 按用户选择跳过。
+- 2026-11-04 Day33 已覆盖五层训练指标、Reward hacking、GRPO 无信号、old log-prob 固定、非有限梯度阻断、Reward/Policy 版本归因、局部/累计 KL、Actor/Learner 失衡、Queue 假健康、Tool 路由选择偏差、固定任务切片、Reward 长尾和 Policy loss 解释边界。用户能正确识别主要异常；对 Tool 切片最初只提出整体选择比例，经纠正后理解必须以决策前的任务要求为分母。下一次不要重问这些定义，从 loss reduction 的代码尺度问题继续。
 
 ## 下一次会话
 
-若用户启动计划学习：从新主题 `Agentic RL｜训练指标与失败诊断` 开始；此前导入不计为已学习。先系统建立任务效果、Policy 偏移、GRPO 信号、优化稳定性和系统吞吐五类指标，再用 Trace/代码定位 reward hacking、staleness、collapse、NaN 和同步失败；不出简单算术题。Tensor/权重同步第一轮已闭合，但 PyTorch backward、真实 checkpoint/Actor 和分布式 queue 仍是明确缺口。第 8 周真实领域 Agent v1 仍暂缓；Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
+若用户启动计划学习：继续父话题 `Agentic RL｜训练指标与失败诊断`，先系统解释 `loss reduction`、有效 Response token 数与长度变化怎样改变 loss 尺度，再进入 Value/Critic 指标和完整诊断闭环；不要直接要求回答本次末尾未学习的旧题，也不出简单算术题。Day33 的五层指标、版本归因、吞吐和切片第一轮已完成，但真实训练日志、Dashboard、PyTorch backward、checkpoint/Actor 和分布式 queue 仍是明确缺口。第 8 周真实领域 Agent v1 仍暂缓；Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。

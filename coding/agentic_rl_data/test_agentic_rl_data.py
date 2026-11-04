@@ -36,6 +36,12 @@ from .training_control import (
     simulate_kl_early_stop,
     weighted_microbatch_mean,
 )
+from .training_diagnostics import (
+    DiagnosticCode,
+    MetricIdentity,
+    TrainingMetricSnapshot,
+    diagnose_training,
+)
 from .weight_sync import (
     ActorPolicyState,
     PolicySnapshotManifest,
@@ -52,7 +58,111 @@ def collect(actions, *, trajectory_id="traj", max_steps=5, version=10):
     )
 
 
+def metric_snapshot(**overrides):
+    values = {
+        "identity": MetricIdentity(
+            run_id="run-1",
+            update_step=10,
+            policy_version=12,
+            behavior_policy_version=11,
+            environment_version="env-v1",
+            reward_version="reward-v1",
+            verifier_version="verifier-v1",
+        ),
+        "train_reward_trend": 0.0,
+        "eval_success_trend": 0.0,
+        "tool_calls_trend": 0.0,
+        "trajectory_length_trend": 0.0,
+        "group_reward_std": 0.5,
+        "zero_advantage_group_rate": 0.1,
+        "approx_kl_to_old": 0.02,
+        "target_kl": 0.1,
+        "clipfrac": 0.1,
+        "max_clipfrac": 0.3,
+        "queue_depth": 20,
+        "max_queue_depth": 100,
+        "rollout_production_rate": 100.0,
+        "accepted_trajectory_rate": 95.0,
+        "stale_rejection_rate": 0.05,
+        "non_finite_loss_rate": 0.0,
+        "non_finite_gradient_rate": 0.0,
+    }
+    values.update(overrides)
+    return TrainingMetricSnapshot(**values)
+
+
 class AgenticRLDataTest(unittest.TestCase):
+    def test_diagnoses_reward_hacking_from_effect_and_cost_divergence(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                train_reward_trend=0.3,
+                eval_success_trend=-0.1,
+                tool_calls_trend=0.4,
+                trajectory_length_trend=0.2,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.REWARD_HACKING_SUSPECTED)
+
+    def test_diagnoses_no_grpo_signal_from_identical_group_rewards(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                group_reward_std=0.0,
+                zero_advantage_group_rate=0.9,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.NO_GRPO_SIGNAL)
+
+    def test_diagnoses_policy_shift_from_kl_or_clipfrac(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                approx_kl_to_old=0.12,
+                clipfrac=0.4,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.POLICY_UPDATE_TOO_LARGE)
+
+    def test_diagnoses_actor_learner_imbalance(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                queue_depth=90,
+                stale_rejection_rate=0.3,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.ACTOR_LEARNER_IMBALANCE)
+
+    def test_low_queue_does_not_hide_rejected_rollout_waste(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                queue_depth=20,
+                rollout_production_rate=100.0,
+                accepted_trajectory_rate=30.0,
+                stale_rejection_rate=0.7,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.ACTOR_LEARNER_IMBALANCE)
+
+    def test_non_finite_optimization_has_highest_diagnostic_priority(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                train_reward_trend=0.3,
+                eval_success_trend=-0.1,
+                tool_calls_trend=0.4,
+                non_finite_gradient_rate=0.01,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.NON_FINITE_OPTIMIZATION)
+
+    def test_healthy_snapshot_still_requires_trace_review(self):
+        findings = diagnose_training(metric_snapshot())
+
+        self.assertEqual(findings[0].code, DiagnosticCode.HEALTHY)
+
     def test_actor_pins_policy_until_trajectory_finishes(self):
         actor = ActorPolicyState(
             desired_policy_version=100,

@@ -22,10 +22,11 @@ Agent Observation
    trajectory 聚合；
 5. `training_control.py`：看 ragged microbatch 加权与 KL 双层提前停止；
 6. `weight_sync.py`：看 desired/loaded/active Policy、原子 Snapshot 与兼容性校验；
-7. `sample_builder.py`：看同一条轨迹如何分别服务 SFT、PPO 和 GRPO；
-8. `gae_token_demo.py`：用二维 token 矩阵从右向左手算 GAE；
-9. `demo.py`：运行三条不同质量的 rollout，观察 reward 与 group advantage；
-10. `test_agentic_rl_data.py`：用边界测试理解终止/截断、mask、staleness 和数据准入。
+7. `training_diagnostics.py`：看带版本身份的任务、信号、偏移、数值与吞吐诊断；
+8. `sample_builder.py`：看同一条轨迹如何分别服务 SFT、PPO 和 GRPO；
+9. `gae_token_demo.py`：用二维 token 矩阵从右向左手算 GAE；
+10. `demo.py`：运行三条不同质量的 rollout，观察 reward 与 group advantage；
+11. `test_agentic_rl_data.py`：用边界测试理解终止/截断、mask、staleness 和数据准入。
 
 ## 运行
 
@@ -63,6 +64,10 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
   保留可追溯诊断，不能让异常梯度写入模型参数。
 - Actor 必须区分 desired、loaded 与 active trajectory Policy；Snapshot 只在 READY、hash
   与 Base/Tokenizer/Chat Template 全部兼容时，于 trajectory 边界原子切换。
+- 训练诊断不能只看 Reward 或 loss；指标必须关联 Policy/Behavior/Environment/Reward/
+  Verifier 版本，并按非有限优化、真实效果背离、GRPO 信号、Policy 偏移和系统吞吐分层。
+- Queue 水位低不代表流水线健康；过期 trajectory 持续被拒绝也会让 Queue 看起来
+  正常，因此要对比原始 rollout 产量与真正准入训练的 trajectory 吞吐。
 
 教学简化：
 
@@ -70,7 +75,8 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
 - old log-prob 与 value 是固定模拟值；
 - Tool、Verifier 和 reward 都是确定性规则；
 - GRPO 把整条 Agent trajectory 视为一个 completion，并用总 reward 做组内标准化；
-- PPO 只构造训练输入，未实现 clipped objective、KL、critic loss 和 optimizer step。
+- `demo.py` 只演示确定性 rollout；`tensor_loss.py` 和 `training_control.py` 另行提供
+  clipped objective、Value/Entropy/Reference KL 组合与 optimizer step gate 的教学实现。
 
 尚未实现：真实模型 rollout、分布式变长 batching、数据持久化、reward model、真实
 PPO/GRPO backward，以及云 GPU 训练。`tensor_loss.py` 已提供真实 PyTorch 写法，但当前
