@@ -24,7 +24,24 @@ from .sample_builder import (
     trajectory_equal_masked_mean,
     validate_trajectory,
 )
-from .tensor_loss import ppo_policy_loss_reference
+from .tensor_loss import (
+    LossCoefficients,
+    combine_grpo_loss_reference,
+    combine_ppo_loss_reference,
+    ppo_policy_loss_reference,
+)
+from .training_control import (
+    OptimizerStepDecision,
+    gate_optimizer_step,
+    simulate_kl_early_stop,
+    weighted_microbatch_mean,
+)
+from .weight_sync import (
+    ActorPolicyState,
+    PolicySnapshotManifest,
+    RefreshStatus,
+    SnapshotStatus,
+)
 
 
 def collect(actions, *, trajectory_id="traj", max_steps=5, version=10):
@@ -36,6 +53,140 @@ def collect(actions, *, trajectory_id="traj", max_steps=5, version=10):
 
 
 class AgenticRLDataTest(unittest.TestCase):
+    def test_actor_pins_policy_until_trajectory_finishes(self):
+        actor = ActorPolicyState(
+            desired_policy_version=100,
+            loaded_policy_version=100,
+            base_model_hash="base-a",
+            tokenizer_version="tok-v1",
+            chat_template_version="chat-v1",
+        )
+        self.assertEqual(actor.begin_trajectory(required_policy_version=100), 100)
+        actor.request_version(101)
+
+        manifest = PolicySnapshotManifest(
+            policy_version=101,
+            status=SnapshotStatus.READY,
+            weights_hash="weights-101",
+            base_model_hash="base-a",
+            adapter_hash="adapter-101",
+            tokenizer_version="tok-v1",
+            chat_template_version="chat-v1",
+        )
+        with self.assertRaisesRegex(RuntimeError, "不能热切换"):
+            actor.install_snapshot(manifest)
+
+        self.assertEqual(actor.finish_trajectory(), 100)
+        actor.install_snapshot(manifest)
+        self.assertEqual(actor.begin_trajectory(required_policy_version=101), 101)
+
+    def test_incompatible_adapter_keeps_old_loaded_policy(self):
+        actor = ActorPolicyState(
+            desired_policy_version=101,
+            loaded_policy_version=101,
+            base_model_hash="base-b",
+            tokenizer_version="tok-v1",
+            chat_template_version="chat-v1",
+        )
+        actor.request_version(102)
+        incompatible = PolicySnapshotManifest(
+            policy_version=102,
+            status=SnapshotStatus.READY,
+            weights_hash="weights-102",
+            base_model_hash="base-a",
+            adapter_hash="adapter-102",
+            tokenizer_version="tok-v1",
+            chat_template_version="chat-v1",
+        )
+
+        with self.assertRaisesRegex(ValueError, "Base Model 不兼容"):
+            actor.install_snapshot(incompatible)
+
+        self.assertEqual(actor.loaded_policy_version, 101)
+        self.assertIs(actor.refresh_status, RefreshStatus.FAILED)
+
+    def test_actor_cannot_stamp_desired_version_before_loading_it(self):
+        actor = ActorPolicyState(
+            desired_policy_version=102,
+            loaded_policy_version=101,
+            base_model_hash="base-a",
+            tokenizer_version="tok-v1",
+            chat_template_version="chat-v1",
+            refresh_status=RefreshStatus.FAILED,
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "实际 loaded version"):
+            actor.begin_trajectory(required_policy_version=102)
+    def test_ppo_total_loss_uses_value_entropy_and_kl_with_correct_signs(self):
+        total_loss = combine_ppo_loss_reference(
+            policy_loss=-0.4,
+            value_loss=0.145,
+            entropy=0.8,
+            reference_kl=0.02,
+            coefficients=LossCoefficients(
+                value=0.5,
+                entropy=0.01,
+                reference_kl=0.1,
+            ),
+        )
+
+        self.assertAlmostEqual(total_loss, -0.3335)
+
+    def test_grpo_total_loss_has_no_value_term(self):
+        total_loss = combine_grpo_loss_reference(
+            policy_loss=-0.4,
+            entropy=0.8,
+            reference_kl=0.02,
+            coefficients=LossCoefficients(
+                entropy=0.01,
+                reference_kl=0.1,
+            ),
+        )
+
+        self.assertAlmostEqual(total_loss, -0.406)
+
+    def test_non_finite_gradient_cannot_update_parameters(self):
+        result = gate_optimizer_step(
+            total_loss=-0.4,
+            grad_norm=float("nan"),
+            valid_token_count=32,
+        )
+
+        self.assertIs(result.decision, OptimizerStepDecision.SKIP)
+        self.assertEqual(result.reason_code, "NON_FINITE_GRADIENT")
+
+    def test_finite_loss_and_gradient_allow_optimizer_step(self):
+        result = gate_optimizer_step(
+            total_loss=-0.4,
+            grad_norm=0.8,
+            valid_token_count=32,
+        )
+
+        self.assertIs(result.decision, OptimizerStepDecision.STEP)
+
+    def test_ragged_microbatches_recover_global_token_mean(self):
+        result = weighted_microbatch_mean(
+            means=[0.4, 1.4],
+            valid_counts=[50, 10],
+        )
+
+        self.assertAlmostEqual(result, 34.0 / 60.0)
+
+    def test_high_kl_stops_remaining_minibatches_and_epochs(self):
+        result = simulate_kl_early_stop(
+            approx_kls_by_epoch=[
+                [0.01, 0.02, 0.03],
+                [0.04, 0.12, 0.05],
+                [0.02, 0.02, 0.02],
+            ],
+            target_kl=0.1,
+        )
+
+        self.assertTrue(result.early_stopped)
+        self.assertEqual(result.processed_minibatches, 5)
+        self.assertEqual(result.completed_epochs, 1)
+        self.assertEqual((result.stop_epoch, result.stop_minibatch), (1, 1))
+
     def test_ppo_reference_loss_applies_causal_shift_and_masked_mean(self):
         # 原序列位置 1、2 是 Response；位置 0 是 BOS，位置 3 是 PAD。
         # 两个有效 token 的 loss 分别是 -2.4 和 1.6，masked mean 为 -0.4。
@@ -147,6 +298,33 @@ class AgenticRLDataTest(unittest.TestCase):
 
         self.assertIs(waiting.decision, AdmissionDecision.PENDING)
         self.assertIs(timed_out.decision, AdmissionDecision.REJECT)
+
+    def test_grpo_group_rejects_mixed_behavior_policy_versions(self):
+        trajectories = [
+            collect(
+                successful_actions(),
+                trajectory_id=f"v10-{index}",
+                version=10,
+            )
+            for index in range(3)
+        ]
+        trajectories.append(
+            collect(
+                successful_actions(),
+                trajectory_id="v11-0",
+                version=11,
+            )
+        )
+        contract = TrainingDataContract(
+            current_policy_version=11,
+            max_policy_lag=2,
+            expected_group_size=4,
+        )
+
+        result = admit_grpo_group(trajectories, contract)
+
+        self.assertIs(result.decision, AdmissionDecision.REJECT)
+        self.assertEqual(result.reason_code, "MIXED_GROUP_POLICY_VERSION")
 
     def test_terminal_failure_counts_as_a_completed_grpo_rollout(self):
         trajectories = [

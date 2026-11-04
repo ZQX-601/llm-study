@@ -230,6 +230,20 @@ def admit_grpo_group(
         if result.decision is not AdmissionDecision.ACCEPT:
             return result
 
+    # Reward 标准化的 G 条 completion 必须来自同一个 behavior snapshot。不同版本的
+    # trajectory 单独看都可能合法，但混成一组会让相对 Advantage 的采样分布不一致。
+    group_policy_versions = {
+        step.decision.policy_version
+        for trajectory in trajectories
+        for step in trajectory.steps
+    }
+    if len(group_policy_versions) != 1:
+        return _result(
+            AdmissionDecision.REJECT,
+            "MIXED_GROUP_POLICY_VERSION",
+            f"GRPO 组内混入多个 behavior policy：{sorted(group_policy_versions)}",
+        )
+
     return _result(
         AdmissionDecision.ACCEPT,
         "GROUP_ACCEPTED",

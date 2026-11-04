@@ -18,11 +18,14 @@ Agent Observation
 1. `contracts.py`：先认识 Observation、Action、Decision、StepRecord、Trajectory；
 2. `environment.py`：看 Agent 决策怎样经过 Runtime 变成一次环境迁移；
 3. `admission.py`：看版本合同、policy lag 与 GRPO 组完整性怎样决定数据去向；
-4. `tensor_loss.py`：看 causal shift、ratio、PPO clipping 与 masked mean；
-5. `sample_builder.py`：看同一条轨迹如何分别服务 SFT、PPO 和 GRPO；
-6. `gae_token_demo.py`：用二维 token 矩阵从右向左手算 GAE；
-7. `demo.py`：运行三条不同质量的 rollout，观察 reward 与 group advantage；
-8. `test_agentic_rl_data.py`：用边界测试理解终止/截断、mask、staleness 和数据准入。
+4. `tensor_loss.py`：看 causal shift、ratio、PPO clipping、masked mean 与 GRPO Tensor
+   trajectory 聚合；
+5. `training_control.py`：看 ragged microbatch 加权与 KL 双层提前停止；
+6. `weight_sync.py`：看 desired/loaded/active Policy、原子 Snapshot 与兼容性校验；
+7. `sample_builder.py`：看同一条轨迹如何分别服务 SFT、PPO 和 GRPO；
+8. `gae_token_demo.py`：用二维 token 矩阵从右向左手算 GAE；
+9. `demo.py`：运行三条不同质量的 rollout，观察 reward 与 group advantage；
+10. `test_agentic_rl_data.py`：用边界测试理解终止/截断、mask、staleness 和数据准入。
 
 ## 运行
 
@@ -49,9 +52,17 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
   必须重新采集；
 - GRPO 组不能因某条 rollout 延迟就静默缩小 G；超时失败若已形成合法终止轨迹，则它是
   有价值的负样本，而不是“缺失数据”。
+- 同一 GRPO Group 在 fan-out 前锁定一个 behavior Policy snapshot；单条都合法的不同
+  Policy 版本 trajectory 也不能混组做 Reward 标准化。
 - 静态准入通过后，还要用 current-policy forward 的 `new_logprobs` 计算有效 Response
   token 上的 ratio、clipfrac 与近似 KL；高分布偏移属于本轮 `REJECT`，NaN、错位等
   数据异常才进入 `QUARANTINE`。
+- 梯度累积时不能盲目平均 ragged microbatch mean；如果目标是全局 token mean，要按有效
+  token 数恢复总和。KL 超阈值时要同时退出 minibatch 与 epoch 两层循环。
+- `optimizer.step()` 前必须检查有效 token、loss 与 grad norm；NaN/Inf batch 只能跳过并
+  保留可追溯诊断，不能让异常梯度写入模型参数。
+- Actor 必须区分 desired、loaded 与 active trajectory Policy；Snapshot 只在 READY、hash
+  与 Base/Tokenizer/Chat Template 全部兼容时，于 trajectory 边界原子切换。
 
 教学简化：
 
@@ -70,4 +81,5 @@ PPO/GRPO backward，以及云 GPU 训练。`tensor_loss.py` 已提供真实 PyTo
 当前 `sample_builder.py` 还包含：PPO 的 `return_targets` batch、PPO/GRPO 公共
 `PolicyDecisionSample`、多轮 Agent GRPO 的 Decision flatten 与身份字段，以及按 trajectory
 等权聚合的纯 Python 参考实现。真实训练时需将列表聚合替换为保持 Autograd 的 Tensor
-segment/scatter 运算。
+segment/scatter 运算；`tensor_loss.py` 已给出对应的 GRPO Tensor 路径，但因当前环境没有
+PyTorch，尚未实际执行 backward。
