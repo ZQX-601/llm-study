@@ -41,6 +41,7 @@ from .training_diagnostics import (
     MetricIdentity,
     TrainingMetricSnapshot,
     diagnose_training,
+    masked_explained_variance,
 )
 from .weight_sync import (
     ActorPolicyState,
@@ -75,6 +76,9 @@ def metric_snapshot(**overrides):
         "trajectory_length_trend": 0.0,
         "group_reward_std": 0.5,
         "zero_advantage_group_rate": 0.1,
+        "explained_variance_trend": 0.0,
+        "absolute_value_bias_trend": 0.0,
+        "raw_advantage_std_trend": 0.0,
         "approx_kl_to_old": 0.02,
         "target_kl": 0.1,
         "clipfrac": 0.1,
@@ -92,6 +96,35 @@ def metric_snapshot(**overrides):
 
 
 class AgenticRLDataTest(unittest.TestCase):
+    def test_explained_variance_ignores_prompt_and_padding_values(self):
+        explained_variance = masked_explained_variance(
+            return_targets=[[1.0, 3.0, 99.0]],
+            value_predictions=[[1.0, 3.0, -99.0]],
+            response_mask=[[1, 1, 0]],
+        )
+
+        self.assertAlmostEqual(explained_variance, 1.0)
+
+    def test_explained_variance_is_undefined_for_constant_returns(self):
+        explained_variance = masked_explained_variance(
+            return_targets=[[2.0, 2.0]],
+            value_predictions=[[1.0, 3.0]],
+            response_mask=[[1, 1]],
+        )
+
+        self.assertIsNone(explained_variance)
+
+    def test_diagnoses_critic_signal_degradation(self):
+        findings = diagnose_training(
+            metric_snapshot(
+                explained_variance_trend=-0.3,
+                absolute_value_bias_trend=0.2,
+                raw_advantage_std_trend=0.4,
+            )
+        )
+
+        self.assertEqual(findings[0].code, DiagnosticCode.CRITIC_SIGNAL_DEGRADED)
+
     def test_diagnoses_reward_hacking_from_effect_and_cost_divergence(self):
         findings = diagnose_training(
             metric_snapshot(

@@ -68,6 +68,8 @@ python3 -m unittest coding.agentic_rl_data.test_agentic_rl_data -v
   Verifier 版本，并按非有限优化、真实效果背离、GRPO 信号、Policy 偏移和系统吞吐分层。
 - Queue 水位低不代表流水线健康；过期 trajectory 持续被拒绝也会让 Queue 看起来
   正常，因此要对比原始 rollout 产量与真正准入训练的 trajectory 吞吐。
+- PPO Critic 诊断要在同一 Response mask 上联合 Value loss、bias、explained variance
+  与 raw Advantage；Return 无方差时 explained variance 不可解释，不能伪装成 0。
 
 教学简化：
 

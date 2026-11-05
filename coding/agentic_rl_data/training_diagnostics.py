@@ -10,12 +10,14 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 from enum import Enum
+from typing import Sequence
 
 
 class DiagnosticCode(str, Enum):
     HEALTHY = "healthy"
     REWARD_HACKING_SUSPECTED = "reward_hacking_suspected"
     NO_GRPO_SIGNAL = "no_grpo_signal"
+    CRITIC_SIGNAL_DEGRADED = "critic_signal_degraded"
     POLICY_UPDATE_TOO_LARGE = "policy_update_too_large"
     ACTOR_LEARNER_IMBALANCE = "actor_learner_imbalance"
     NON_FINITE_OPTIMIZATION = "non_finite_optimization"
@@ -45,6 +47,9 @@ class TrainingMetricSnapshot:
     trajectory_length_trend: float
     group_reward_std: float
     zero_advantage_group_rate: float
+    explained_variance_trend: float | None
+    absolute_value_bias_trend: float
+    raw_advantage_std_trend: float
     approx_kl_to_old: float
     target_kl: float
     clipfrac: float
@@ -65,6 +70,68 @@ class DiagnosticFinding:
     priority: int
 
 
+def masked_explained_variance(
+    *,
+    return_targets: Sequence[Sequence[float]],
+    value_predictions: Sequence[Sequence[float]],
+    response_mask: Sequence[Sequence[int]],
+    variance_epsilon: float = 1e-8,
+) -> float | None:
+    """只在有效 Response token 上计算 Critic explained variance。
+
+    返回 ``None`` 表示有效 Return 几乎没有方差，此时分母不可解释；空 mask、shape
+    错误和非有限值属于数据合同错误，直接拒绝计算。
+    """
+
+    if not (
+        len(return_targets)
+        == len(value_predictions)
+        == len(response_mask)
+    ):
+        raise ValueError("Return/Value/Mask 的 batch 维度不一致")
+    if variance_epsilon <= 0 or not math.isfinite(variance_epsilon):
+        raise ValueError("variance_epsilon 必须是有限正数")
+
+    valid_returns: list[float] = []
+    valid_values: list[float] = []
+    for return_row, value_row, mask_row in zip(
+        return_targets,
+        value_predictions,
+        response_mask,
+    ):
+        if not (len(return_row) == len(value_row) == len(mask_row)):
+            raise ValueError("Return/Value/Mask 的 token 维度不一致")
+        for target, prediction, mask in zip(return_row, value_row, mask_row):
+            if mask not in (0, 1):
+                raise ValueError("response_mask 只能包含 0/1")
+            if mask == 0:
+                continue
+            if not math.isfinite(target) or not math.isfinite(prediction):
+                raise ValueError("有效 Return/Value 包含 NaN/Inf")
+            valid_returns.append(target)
+            valid_values.append(prediction)
+
+    if not valid_returns:
+        raise ValueError("没有可计算 explained variance 的有效 Response token")
+
+    return_mean = sum(valid_returns) / len(valid_returns)
+    return_variance = sum(
+        (target - return_mean) ** 2 for target in valid_returns
+    ) / len(valid_returns)
+    if return_variance <= variance_epsilon:
+        return None
+
+    residuals = [
+        target - prediction
+        for target, prediction in zip(valid_returns, valid_values)
+    ]
+    residual_mean = sum(residuals) / len(residuals)
+    residual_variance = sum(
+        (residual - residual_mean) ** 2 for residual in residuals
+    ) / len(residuals)
+    return 1.0 - residual_variance / return_variance
+
+
 def _validate(snapshot: TrainingMetricSnapshot) -> None:
     if not snapshot.identity.run_id:
         raise ValueError("训练指标缺少 run_id")
@@ -78,6 +145,8 @@ def _validate(snapshot: TrainingMetricSnapshot) -> None:
         snapshot.trajectory_length_trend,
         snapshot.group_reward_std,
         snapshot.zero_advantage_group_rate,
+        snapshot.absolute_value_bias_trend,
+        snapshot.raw_advantage_std_trend,
         snapshot.approx_kl_to_old,
         snapshot.target_kl,
         snapshot.clipfrac,
@@ -90,6 +159,11 @@ def _validate(snapshot: TrainingMetricSnapshot) -> None:
     )
     if not all(math.isfinite(value) for value in finite_values):
         raise ValueError("训练指标本身包含 NaN/Inf，不能继续规则诊断")
+    if (
+        snapshot.explained_variance_trend is not None
+        and not math.isfinite(snapshot.explained_variance_trend)
+    ):
+        raise ValueError("explained_variance_trend 必须有限或为 None")
     if snapshot.target_kl <= 0 or snapshot.max_clipfrac < 0:
         raise ValueError("KL/clipfrac 阈值配置非法")
     if snapshot.queue_depth < 0 or snapshot.max_queue_depth <= 0:
@@ -157,6 +231,22 @@ def diagnose_training(
                 DiagnosticCode.NO_GRPO_SIGNAL,
                 "同组 Reward 缺少区分度，大量 Group Advantage 为 0",
                 80,
+            )
+        )
+
+    if (
+        snapshot.explained_variance_trend is not None
+        and snapshot.explained_variance_trend < 0
+        and (
+            snapshot.absolute_value_bias_trend > 0
+            or snapshot.raw_advantage_std_trend > 0
+        )
+    ):
+        findings.append(
+            DiagnosticFinding(
+                DiagnosticCode.CRITIC_SIGNAL_DEGRADED,
+                "Critic 对 Return 变化的解释能力下降，且 Value bias 或原始 Advantage 波动扩大",
+                75,
             )
         )
 
