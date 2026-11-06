@@ -1,6 +1,6 @@
 # 学习状态
 
-更新日期：2026-11-05。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
+更新日期：2026-11-06。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
 
 ## 当前目标与资源
 
@@ -42,6 +42,8 @@
 - 2026-11-02 至 2026-11-04 Day32 已完成 Tensor Loss/训练控制和权重同步第一轮：Autograd 边界、梯度累积、ragged 加权、KL early stop、GRPO trajectory Tensor 聚合、optimizer step gate、Group Policy 一致性、desired/loaded/active 版本和原子 Snapshot。目录 36 项标准库测试通过；用户选择跳过 PyTorch 安装，真实 backward/optimizer 与分布式热加载未运行。下一主题为训练指标与失败诊断，尚未开始。
 - 2026-11-04 Day33 已部分完成训练指标与失败诊断第一轮：建立任务效果、Policy 偏移、GRPO 信号、优化稳定性和系统吞吐五层指标，完成 Reward hacking、无信号、版本归因、累计漂移、Actor/Learner 失衡、切片/路由偏差和分布长尾 Trace。新增带版本身份的教学诊断规则，目录 43 项标准库测试通过。停在 loss reduction 与有效 token 尺度之前；无真实训练日志或线上告警证据。
 - 2026-11-05 Day34 已完成训练指标与失败诊断第一轮：补齐 token/trajectory/prompt/microbatch reduction、PPO Return/Value/Advantage、masked Value loss、Value clipping、explained variance、Advantage 标准化和 Critic 归因。新增 masked EV 与 Critic 退化规则，目录 46 项标准库测试通过。用户明确跳过“从诊断到可验证修复”；真实 backward、训练日志和告警仍未运行。
+- 2026-11-06 用户要求后续课程正式加入工业界常用的后训练开源框架，避免长期停留在教学实现。ROADMAP 已增加 `TRL → vLLM → verl → FSDP/DeepSpeed + Ray/监控` 实战线；SGLang/OpenRLHF 先作为横向选型。此项目前只是课程计划调整，尚无框架安装、源码阅读或真实运行证据。
+- 2026-11-06 Day35 已完成 Day29–34 Agentic RL 阶段回顾，并开始后训练框架实战导入：明确 PPO 不强制同 Prompt 多轨迹、GRPO 依赖同 Prompt 的组内样本；用户正确判断 Reward 重打分后必须重算 Advantage 与 Return。已系统区分 TRL、vLLM、verl、FSDP/DeepSpeed 和 Ray 的职责，但末尾框架边界题尚未回答；没有新增训练代码或真实运行证据。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
 ## 能力证据
@@ -84,6 +86,7 @@
 | GRPO Tensor 聚合 | Day32 理解 Decision flatten 后按 trajectory 聚合 sum/count 与等权 mean；`scatter_add_` 代码由教练补全 | 高 | 换 ragged trajectory，由用户独立补 Tensor 聚合或边界测试 | 2026-11-07 |
 | Actor/Learner 权重同步 | Day32 理解 trajectory/group 版本锁、desired/loaded/active、原子 Snapshot 和 LoRA/Base 兼容；无真实分布式运行 | 高 | 给定发布/刷新/在途 Group Trace，独立判断刷新、继续、重建、拒绝与背压 | 2026-11-11 |
 | Agentic RL 训练诊断 | Day33–34 能判断 Reward hacking、无信号、版本跳变、吞吐/聚合掩盖与 Critic 退化；masked EV 和规则主要由教练实现 | 高 | 独立补一个 masked Critic 指标或按固定任务切片的边界测试 | 2026-11-08 |
+| 后训练框架实战 | 已决定加入 TRL、vLLM、verl、FSDP/DeepSpeed、Ray 与监控；目前尚未安装、读源码或运行 | 高 | 先完成框架角色与教学合同映射，再用小模型跑真实 TRL 训练和 vLLM rollout，最后进入 verl 最小闭环 | Agentic RL 阶段回顾后 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -163,7 +166,8 @@
 - 2026-11-04 Day32 已覆盖 `.item()`/detach、训练 step、梯度累积、ragged microbatch、KL 双层停止、GRPO scatter 聚合、总 loss 符号、NaN step gate、trajectory/group Policy 锁、原子 Snapshot 与 LoRA/Base 兼容。用户曾遗漏 `new_values` 梯度、detach/dtype、触发阈值 minibatch，误判 Entropy 梯度对照测试，并无法独立补 scatter；经代码 Trace 纠正。用户要求不再出简单算术题，后续只用代码/Trace/工程决策检测。真实 PyTorch 安装和 backward 按用户选择跳过。
 - 2026-11-04 Day33 已覆盖五层训练指标、Reward hacking、GRPO 无信号、old log-prob 固定、非有限梯度阻断、Reward/Policy 版本归因、局部/累计 KL、Actor/Learner 失衡、Queue 假健康、Tool 路由选择偏差、固定任务切片、Reward 长尾和 Policy loss 解释边界。用户能正确识别主要异常；对 Tool 切片最初只提出整体选择比例，经纠正后理解必须以决策前的任务要求为分母。下一次不要重问这些定义，从 loss reduction 的代码尺度问题继续。
 - 2026-11-05 Day34 已覆盖 token/trajectory/prompt/microbatch reduction、Return/Value/Advantage、Value mask/clipping、EV/Bias、Advantage 标准化和 Critic 归因。用户曾提出删除 microbatch backward、认为恢复局部 sum 会重复加权、Value loss 只除 mask sum，并把 generalization gap 先归因 Advantage；经代码/Trace 纠正。用户明确跳过“从诊断到可验证修复”，后续不自动返回该题。
+- 2026-11-06 Day35 已用 Reward 版本变化检查派生字段一致性；用户正确指出新 Reward 下必须重算 Return 与 Advantage。已讲解 PPO/GRPO 的同 Prompt 采样差异，以及 TRL、vLLM、verl、FSDP/DeepSpeed、Ray 的职责层级。末尾“仅有 vLLM completion 是否算完成 GRPO”尚未回答，下次从该停点继续，不把框架导入记为已验收。
 
 ## 下一次会话
 
-若用户启动计划学习：先做一次 Agentic RL 阶段回顾，汇总 Day29–34 的环境、样本、准入、Tensor loss、训练控制、权重同步和失败诊断证据，再根据 ROADMAP 显式进入下一父话题；不要自动进入用户明确跳过的“从诊断到可验证修复”，也不出简单算术题。真实训练日志、Dashboard、PyTorch backward、checkpoint/Actor 和分布式 queue 仍是明确缺口。第 8 周真实领域 Agent v1 仍暂缓；Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
+若用户启动计划学习：从 [Day35](../archives/day35.md) 的后训练框架实战导入继续。先回答尚未完成的职责边界题：只有 vLLM 生成 completion、没有 Advantage/loss/backward/optimizer，不算完成 GRPO，vLLM 只完成 rollout；随后建立教学合同到 `TRL/vLLM/verl` 的组件与字段映射，明确本地 8 GB 可运行边界、版本锁和实验验收，再依次进入 TRL 小模型真实训练、vLLM rollout、verl 调用链与最小闭环。不要自动进入用户明确跳过的“从诊断到可验证修复”，也不出简单算术题。真实训练日志、Dashboard、PyTorch backward、checkpoint/Actor 和分布式 queue 仍是明确缺口。第 8 周真实领域 Agent v1 仍暂缓；Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
