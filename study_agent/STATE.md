@@ -1,6 +1,6 @@
 # 学习状态
 
-更新日期：2026-11-06。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
+更新日期：2026-11-11。此文件是以后每日续学的入口；已发生内容的详细证据见 `CURRENT_PROGRESS.md`、`archives/` 和 `qa/`。下列“已学习”不自动等于“独立实战通过”。
 
 ## 当前目标与资源
 
@@ -44,6 +44,10 @@
 - 2026-11-05 Day34 已完成训练指标与失败诊断第一轮：补齐 token/trajectory/prompt/microbatch reduction、PPO Return/Value/Advantage、masked Value loss、Value clipping、explained variance、Advantage 标准化和 Critic 归因。新增 masked EV 与 Critic 退化规则，目录 46 项标准库测试通过。用户明确跳过“从诊断到可验证修复”；真实 backward、训练日志和告警仍未运行。
 - 2026-11-06 用户要求后续课程正式加入工业界常用的后训练开源框架，避免长期停留在教学实现。ROADMAP 已增加 `TRL → vLLM → verl → FSDP/DeepSpeed + Ray/监控` 实战线；SGLang/OpenRLHF 先作为横向选型。此项目前只是课程计划调整，尚无框架安装、源码阅读或真实运行证据。
 - 2026-11-06 Day35 已完成 Day29–34 Agentic RL 阶段回顾，并开始后训练框架实战导入：明确 PPO 不强制同 Prompt 多轨迹、GRPO 依赖同 Prompt 的组内样本；用户正确判断 Reward 重打分后必须重算 Advantage 与 Return。已系统区分 TRL、vLLM、verl、FSDP/DeepSpeed 和 Ray 的职责，但末尾框架边界题尚未回答；没有新增训练代码或真实运行证据。
+- 2026-11-11 用户在后训练框架主线中追问 FSDP，已系统学习参数/梯度/优化器状态分片、`all-gather`、`reduce-scatter`、DDP/TP 边界、FSDP1/FSDP2 以及在 verl Learner 中的职责，并确认本轮理解。已归档为 [FSDP：训练状态全分片与通信过程](../qa/2026-11-11-fsdp-training-sharding.md)；仅为用户自评掌握，尚无真实多卡运行或独立验收。
+- 2026-11-11 用户确认理解 verl 的整体架构：Trainer/Driver、Actor/Rollout/Reference/Critic/Reward、WorkerGroup、ResourcePool、HybridFlow、同步/异步及其与 TRL/vLLM/FSDP/Ray 的边界。已归档为 [verl：大模型 RL 后训练框架整体架构](../qa/2026-11-11-verl-architecture-overview.md)；尚未阅读真实源码、运行框架或完成独立配置 Trace。
+- 2026-11-12 用户确认理解 Padding、No-padding 与 Packed Sequence：Padding 计算浪费、`cu_seqlens` 边界、position IDs 重置、attention/response mask 区别及 token 字段同步。已归档为 [Padding、No-padding 与 Packed Sequence 布局](../qa/2026-11-12-padding-no-padding-packed-layout.md)；尚无真实 Tensor 重排、Kernel 数值对照或吞吐证据。
+- 2026-11-09 至 2026-11-12 Day36 已完成后训练框架职责、GRPO 字段流、verl V1 同步 Trainer 源码与 Actor Update 第一轮；新增 `coding/post_training_frameworks/`，11 项标准库测试通过。用户能正确判断 old/ref/new Policy、KL 条件角色、Prompt→Trajectory 单位、Group Advantage、动态 microbatch、old log-prob 固定与发布硬门槛。真实 PyTorch/TRL/vLLM/verl/FSDP/Ray 均未运行；下一步需确认 RTX 4060 机器的 OS，再准备 TRL 小模型真实训练。
 - Kimi K3、DeepSeek V4.1 等前沿架构属于独立 QA 专题线；除非用户主动选择专题复习或验收，不插入主线计划学习。
 
 ## 能力证据
@@ -53,7 +57,7 @@
 | Transformer/预训练基础 | 已学习 | 有历史讲解 | 未记录真实预训练 | 小模型训练与数据流程复现 |
 | SFT、LoRA、QLoRA、DPO | 已学习 | 有配置与原理分析 | 未记录可复现微调结果 | 建立数据、基线、微调和评估实验 |
 | PPO/GRPO | Day29–32 完成环境、样本、准入、Tensor Loss/训练控制；Day33–34 完成训练指标与失败诊断第一轮 | `coding/agentic_rl_data/` 含 loss、scatter 聚合、step gate、版本状态机、masked EV 与诊断规则 | 46 项标准库测试通过；PyTorch 路径仅语法检查，真实 backward 和真实遥测未运行 | 先做 Agentic RL 阶段回顾；真实 tokenizer/model/optimizer 后补 |
-| 分布式训练与 rollout | Day18–19 初步讲解；Day32 恢复 Actor/Learner 权重发布、组版本锁和 Queue 背压 | `weight_sync.py` 为确定性教学状态机 | 状态机测试通过；无真实 checkpoint、对象存储和分布式 Actor | 后续接真实推理引擎/队列并记录同步失败与 stale rate |
+| 分布式训练与 rollout | Day18–19 初步讲解；Day32 恢复 Actor/Learner 权重发布、组版本锁和 Queue 背压；2026-11-11 完成 FSDP 原理 QA | `weight_sync.py` 为确定性教学状态机；FSDP 尚无真实源码或配置实验 | 状态机测试通过；无真实 FSDP、多卡 checkpoint、对象存储和分布式 Actor | 后续接真实训练/推理引擎，验证分片、checkpoint、同步失败与 stale rate |
 | LLM 应用接口与 Agent Runtime | Day20–25 已完成接口、状态、工具边界、显式 Agent Loop、记忆、Context 与评估第一轮 | `agent_loop.py`、`memory_context.py`、`evaluation.py` 覆盖 Runtime、Trace、Memory、评测与遥测聚合 | 教学目录共 34 项测试通过；用户完成多次判断与代码阅读，未独立从零实现 | 后续接真实 LLM/MCP、持久化、语义 Verifier 与线上遥测 |
 | Kimi K3 架构 | KDA/MLA/LatentMoE/AttnRes 已专题学习 | 有参考演示代码，其中部分自检已运行 | 未训练 K3 | 核对官方一手资料，完成组件对照 |
 | DeepSeek V4.1 Flash | SWA、CSA2、mHC、CED 与 Decoder SWA Bounded Replay 已完成 QA 学习；待独立验收 | `coding/deepseek_demo/` 已有 SWA/CSA2/mHC 教学实现；CED/Replay 尚无代码 | PyTorch 2.14.0+cu130、CUDA 可用；SWA 3 项、CSA2 4 项及 mHC 数值演示通过；未运行完整模型实验 | 保持为独立 QA 专题；后续补 CED/Replay 教学实现或继续层级 Indexer |
@@ -86,7 +90,7 @@
 | GRPO Tensor 聚合 | Day32 理解 Decision flatten 后按 trajectory 聚合 sum/count 与等权 mean；`scatter_add_` 代码由教练补全 | 高 | 换 ragged trajectory，由用户独立补 Tensor 聚合或边界测试 | 2026-11-07 |
 | Actor/Learner 权重同步 | Day32 理解 trajectory/group 版本锁、desired/loaded/active、原子 Snapshot 和 LoRA/Base 兼容；无真实分布式运行 | 高 | 给定发布/刷新/在途 Group Trace，独立判断刷新、继续、重建、拒绝与背压 | 2026-11-11 |
 | Agentic RL 训练诊断 | Day33–34 能判断 Reward hacking、无信号、版本跳变、吞吐/聚合掩盖与 Critic 退化；masked EV 和规则主要由教练实现 | 高 | 独立补一个 masked Critic 指标或按固定任务切片的边界测试 | 2026-11-08 |
-| 后训练框架实战 | 已决定加入 TRL、vLLM、verl、FSDP/DeepSpeed、Ray 与监控；目前尚未安装、读源码或运行 | 高 | 先完成框架角色与教学合同映射，再用小模型跑真实 TRL 训练和 vLLM rollout，最后进入 verl 最小闭环 | Agentic RL 阶段回顾后 |
+| 后训练框架实战 | Day36 完成 TRL/vLLM/verl/FSDP/Ray 职责、verl V1 同步源码和 Actor Update 第一轮；新增框架映射、环境检查与源码 Trace，11 项测试通过；当前 Codex 环境为 Intel macOS/Python 3.9，无 PyTorch/框架/NVIDIA GPU | 高 | 确认 RTX 4060 的 OS/CUDA，在隔离环境跑 TRL 小模型真实训练，再进入 vLLM rollout 和 verl 最小闭环 | 当前主线 |
 | K3 未核实细节 | 历史归档部分机制只有标题或推断 | 中 | 对官方论文与实现逐项核对 | 前沿导读时 |
 
 ## 主线复习队列
@@ -118,6 +122,9 @@
 | Agentic RL Tensor 与训练控制 | Day32 完成 Autograd 边界、ragged 加权、GRPO trajectory 聚合和 step gate；实现主要由教练完成 | 2026-11-07 | 阅读含 detach/mean/scatter/early-stop Bug 的代码，定位最早错误并提出修复 |
 | Agentic RL 权重同步 | Day32 完成 trajectory/group 版本锁、Snapshot 兼容与 Actor 三版本状态机；36 项目录测试通过 | 2026-11-11 | 给定异步发布与在途 Group Trace，判断实际版本、准入和重采策略 |
 | Agentic RL 训练指标与失败诊断 | Day33–34 完成五层指标、loss reduction 和 Critic 诊断第一轮；46 项目录测试通过，尚无真实遥测 | 2026-11-08 | 换 mask/Value/Advantage 场景，独立补一个诊断边界测试 |
+| FSDP 训练状态分片 | 2026-11-11 用户自评理解 P/G/O 分片、all-gather/reduce-scatter、DDP/TP 边界及 verl 中的训练后端角色；无代码运行 | 2026-11-14 | 给定 Transformer Block Trace，定位完整参数、梯度 shard、通信与 optimizer shard，并说明 UPDATED 与 PUBLISHED 的边界 |
+| verl 整体架构与角色 | 2026-11-11 用户自评理解 Trainer、Worker/ResourcePool、Actor/Rollout/Ref/Critic/Reward、HybridFlow 和同步/异步；无真实源码/运行 | 2026-11-14 | 给定一份 GRPO 配置和 Batch Trace，定位各角色、引擎、字段生产方和权重同步边界 |
+| Padding/No-padding/Packed 布局 | 2026-11-12 用户自评理解 Padding 浪费、连续 Buffer、`cu_seqlens`、position IDs 和字段同步；无 Tensor/Kernel 实验 | 2026-11-15 | 给定两条变长 Prompt/Response，独立写出 packed tokens、边界、position IDs、attention/response mask，并定位跨样本泄漏风险 |
 
 ## QA 专题待验收（不自动插入主线）
 
@@ -167,7 +174,11 @@
 - 2026-11-04 Day33 已覆盖五层训练指标、Reward hacking、GRPO 无信号、old log-prob 固定、非有限梯度阻断、Reward/Policy 版本归因、局部/累计 KL、Actor/Learner 失衡、Queue 假健康、Tool 路由选择偏差、固定任务切片、Reward 长尾和 Policy loss 解释边界。用户能正确识别主要异常；对 Tool 切片最初只提出整体选择比例，经纠正后理解必须以决策前的任务要求为分母。下一次不要重问这些定义，从 loss reduction 的代码尺度问题继续。
 - 2026-11-05 Day34 已覆盖 token/trajectory/prompt/microbatch reduction、Return/Value/Advantage、Value mask/clipping、EV/Bias、Advantage 标准化和 Critic 归因。用户曾提出删除 microbatch backward、认为恢复局部 sum 会重复加权、Value loss 只除 mask sum，并把 generalization gap 先归因 Advantage；经代码/Trace 纠正。用户明确跳过“从诊断到可验证修复”，后续不自动返回该题。
 - 2026-11-06 Day35 已用 Reward 版本变化检查派生字段一致性；用户正确指出新 Reward 下必须重算 Return 与 Advantage。已讲解 PPO/GRPO 的同 Prompt 采样差异，以及 TRL、vLLM、verl、FSDP/DeepSpeed、Ray 的职责层级。末尾“仅有 vLLM completion 是否算完成 GRPO”尚未回答，下次从该停点继续，不把框架导入记为已验收。
+- 2026-11-11 FSDP QA 已讲解 DDP 对照、参数/梯度/优化器状态分片、all-gather/reduce-scatter、FSDP2 DTensor、verl Learner 与 vLLM Rollout 边界；用户自评掌握，未出检测题。主线返回后不要立即重复纯定义，应在框架数据流或代码 Trace 中自然验证。
+- 2026-11-11 verl QA 已从零讲解框架定位、五类模型角色、Trainer/Driver、WorkerGroup、ResourcePool、HybridFlow、DataProto 概念、同步/异步及 TRL 对比；用户自评掌握，尚未做配置/源码检测。下一步从简化配置开始映射，不再直接抛未讲解的字段。
+- 2026-11-12 Packed Layout QA 已讲解 left/right padding、remove padding、连续 buffer、`cu_seqlens`、position IDs、Variable-Length Attention、response mask 同步及恢复 padded layout；用户自评掌握，未出检测题。返回主线后从 Actor mini-batch 单位继续，不立即重复纯定义。
+- 2026-11-12 Day36 已完成框架/源码第一轮 Trace。用户正确回答 UPDATED/PUBLISHED、缺 old log-prob、REPROCESS、ref 不可替代 old、`n=1` 无 GRPO 信号、Trainer/Algorithm 缺 Advantage、无 KL 可省 Ref、双 KL 约束过强、GRPO 可省 Critic、`B×n` 单位、完整 Group Advantage、microbatch-equal 偏权、old 固定和 NaN 不发布。后续不要原样复问，应进入真实环境、配置与日志。
 
 ## 下一次会话
 
-若用户启动计划学习：从 [Day35](../archives/day35.md) 的后训练框架实战导入继续。先回答尚未完成的职责边界题：只有 vLLM 生成 completion、没有 Advantage/loss/backward/optimizer，不算完成 GRPO，vLLM 只完成 rollout；随后建立教学合同到 `TRL/vLLM/verl` 的组件与字段映射，明确本地 8 GB 可运行边界、版本锁和实验验收，再依次进入 TRL 小模型真实训练、vLLM rollout、verl 调用链与最小闭环。不要自动进入用户明确跳过的“从诊断到可验证修复”，也不出简单算术题。真实训练日志、Dashboard、PyTorch backward、checkpoint/Actor 和分布式 queue 仍是明确缺口。第 8 周真实领域 Agent v1 仍暂缓；Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
+若用户启动计划学习：从 [Day36](../archives/day36.md) 的精确停点继续。先确认 RTX 4060 机器是原生 Linux、Windows+WSL2 还是 Windows 原生；根据真实 OS/CUDA 制定隔离环境、版本锁、显存上限、日志和 checkpoint。优先跑 TRL 小模型 SFT/LoRA smoke test，建立真实 forward/backward/optimizer 证据，再进入 GRPO、vLLM rollout 和 verl 最小闭环。不要重复 Day36 已通过的纯定义/Trace，也不要自动进入用户明确跳过的“从诊断到可验证修复”。当前 Codex 环境为 Intel macOS/Python 3.9，无 PyTorch/TRL/vLLM/verl/Ray 和 NVIDIA GPU；不能把标准库测试写成真实框架运行。第 8 周真实领域 Agent v1 仍暂缓；Kimi/DeepSeek QA 不自动插入主线。若用户直接提问，则进入独立 QA。
